@@ -7,8 +7,11 @@ own sign-in and token refresh, so this module never touches a credential. It
 covers only the account Codex itself is logged in to (OpenCodex's `__main__`);
 accounts that exist only in the OpenCodex pool still come from its cache.
 
-Calls are throttled to PROBE_INTERVAL_SECONDS; a failure backs off so a broken
-or missing Codex install costs one short subprocess per interval at most.
+`live_quota` first tries the same data over plain HTTP (`codex_usage_api`),
+which avoids starting the app server; the probe below is the fallback for a
+missing or expired stored token, and starting it lets Codex refresh that token.
+Calls are throttled to PROBE_INTERVAL_SECONDS; a 429 waits out Retry-After, and
+a failure backs off so a broken install costs one attempt per interval at most.
 """
 
 from __future__ import annotations
@@ -22,12 +25,14 @@ import threading
 import time
 from dataclasses import dataclass
 
+from loaders import codex_usage_api
 from loaders.ocx_quota_loader import QuotaWindow
 
 logger = logging.getLogger(__name__)
 
 PROBE_INTERVAL_SECONDS = 60.0
 FAILURE_BACKOFF_SECONDS = 300.0
+MAX_BACKOFF_SECONDS = 3600.0
 PROBE_TIMEOUT_SECONDS = 15.0
 # The ocx shim passes `app-server` straight through, but prefer the real binary
 # when OpenCodex has installed one. A Finder-launched .app has a minimal PATH.
@@ -50,20 +55,33 @@ class CodexLiveQuota:
 _lock = threading.Lock()
 _cached: CodexLiveQuota | None = None
 _next_probe_at = 0.0
+_backoff = PROBE_INTERVAL_SECONDS
 
 
 def live_quota(*, now: float | None = None) -> CodexLiveQuota | None:
     """Latest probe result, probing first when the interval has elapsed."""
-    global _cached, _next_probe_at
+    global _cached, _next_probe_at, _backoff
     current = time.time() if now is None else now
     with _lock:
-        if current >= _next_probe_at:
+        if current < _next_probe_at:
+            return _cached
+        status, http_result, retry_after = codex_usage_api.fetch(current)
+        if status == 429:
+            # Same backend as the app server: don't retry through it either.
+            _backoff = min(max(retry_after or 0.0, _backoff * 2), MAX_BACKOFF_SECONDS)
+            _next_probe_at = current + _backoff
+            return _cached
+        if http_result is not None:
+            plan, windows = http_result
+            result: CodexLiveQuota | None = CodexLiveQuota(plan, time.time(), windows)
+        else:
             result = _probe()
-            if result is not None:
-                _cached = result
-                _next_probe_at = current + PROBE_INTERVAL_SECONDS
-            else:
-                _next_probe_at = current + FAILURE_BACKOFF_SECONDS
+        if result is not None:
+            _cached = result
+            _backoff = PROBE_INTERVAL_SECONDS
+            _next_probe_at = current + PROBE_INTERVAL_SECONDS
+        else:
+            _next_probe_at = current + FAILURE_BACKOFF_SECONDS
         return _cached
 
 

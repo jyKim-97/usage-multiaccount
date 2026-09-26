@@ -191,3 +191,89 @@ def test_newer_api_snapshot_replaces_missing_hook(monkeypatch: pytest.MonkeyPatc
     assert outcome.snapshot is not None
     assert outcome.snapshot.current_percent == 42
     assert outcome.snapshot.data_source == usage_client.API_DATA_SOURCE
+
+
+# --- codex http -------------------------------------------------------------
+
+
+def _jwt(exp: float) -> str:
+    import base64
+
+    body = base64.urlsafe_b64encode(json.dumps({"exp": exp}).encode()).decode().rstrip("=")
+    return f"h.{body}.s"
+
+
+def test_codex_usage_parse() -> None:
+    from loaders import codex_usage_api
+
+    parsed = codex_usage_api.parse_usage(
+        {
+            "plan_type": "plus",
+            "rate_limit": {
+                "primary_window": {
+                    "used_percent": 58,
+                    "limit_window_seconds": 18000,
+                    "reset_after_seconds": 120,
+                },
+                "secondary_window": {
+                    "used_percent": 21,
+                    "limit_window_seconds": 604800,
+                    "reset_at": NOW + 5,
+                },
+            },
+        },
+        now=NOW,
+    )
+    assert parsed == (
+        "plus",
+        (
+            QuotaWindow("short", 58.0, NOW + 120, 18000.0),
+            QuotaWindow("weekly", 21.0, NOW + 5, 604800.0),
+        ),
+    )
+
+
+def test_codex_token_expiry_is_respected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from loaders import codex_usage_api
+
+    monkeypatch.setattr(codex_usage_api, "codex_home", lambda: tmp_path)
+    auth = tmp_path / "auth.json"
+    auth.write_text(json.dumps({"tokens": {"access_token": _jwt(NOW - 5)}}), encoding="utf-8")
+    assert codex_usage_api.access_token(NOW) is None
+    fresh = {"tokens": {"access_token": _jwt(NOW + 3600), "account_id": "acct"}}
+    auth.write_text(json.dumps(fresh), encoding="utf-8")
+    assert codex_usage_api.access_token(NOW) == (_jwt(NOW + 3600), "acct")
+
+
+def test_http_first_then_app_server_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    from loaders import codex_usage_api
+
+    probes: list[int] = []
+
+    def probe() -> CodexLiveQuota:
+        probes.append(1)
+        return LIVE
+
+    monkeypatch.setattr(codex_app_server_probe, "_probe", probe)
+    windows = (QuotaWindow("short", 5.0, NOW + 60, 18000.0),)
+    monkeypatch.setattr(codex_usage_api, "fetch", lambda now: (200, ("plus", windows), None))
+    first = codex_app_server_probe.live_quota(now=NOW)
+    assert first is not None
+    assert first.windows == windows
+    assert probes == []
+
+    monkeypatch.setattr(codex_usage_api, "fetch", lambda now: (None, None, None))
+    later = NOW + codex_app_server_probe.PROBE_INTERVAL_SECONDS
+    assert codex_app_server_probe.live_quota(now=later) == LIVE
+    assert probes == [1]
+
+
+def test_http_429_skips_the_app_server(monkeypatch: pytest.MonkeyPatch) -> None:
+    from loaders import codex_usage_api
+
+    probes: list[int] = []
+    monkeypatch.setattr(codex_app_server_probe, "_probe", lambda: probes.append(1))
+    monkeypatch.setattr(codex_usage_api, "fetch", lambda now: (429, None, 900.0))
+    codex_app_server_probe.live_quota(now=NOW)
+    assert probes == []
+    assert codex_app_server_probe._next_probe_at == NOW + 900.0

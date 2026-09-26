@@ -66,6 +66,10 @@ def _isolate_ocx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     from loaders import codex_app_server_probe
 
     monkeypatch.setattr(codex_app_server_probe, "_probe", lambda: None)
+    monkeypatch.setattr(codex_app_server_probe, "_backoff", 60.0)
+    from loaders import codex_usage_api
+
+    monkeypatch.setattr(codex_usage_api, "fetch", lambda now: (None, None, None))
     monkeypatch.setattr(codex_app_server_probe, "_cached", None)
     monkeypatch.setattr(codex_app_server_probe, "_next_probe_at", 0.0)
 

@@ -43,13 +43,13 @@ The refresh interval defaults to 60 seconds (`--interval N`, minimum 30).
 2. Each block is named after the account's OpenCodex label. To rename one, run `ocx account alias openai <account-id> <name>`.
 3. `●` marks the account currently routing requests. `⚠ about N minutes ago` means OpenCodex hasn't refreshed that account's quota recently. A window whose reset time has passed shows `--` instead of a stale percentage.
 
-The account Codex itself is signed in to is also read live from `codex app-server` every minute, so it stays current even while OpenCodex is stopped. Accounts that exist only in the OpenCodex pool need `ocx` running to refresh; while it is stopped they keep their last values (with the `⚠` age) and their names come from `~/.opencodex/config.json`. Without OpenCodex at all, the card shows that one live account. Only the Default theme renders per-account blocks; the other 13 themes are unchanged from upstream.
+The account Codex itself is signed in to is also read live every minute, so it stays current even while OpenCodex is stopped. Accounts that exist only in the OpenCodex pool need `ocx` running to refresh; while it is stopped they keep their last values (with the `⚠` age) and their names come from `~/.opencodex/config.json`. Without OpenCodex at all, the card shows that one live account. Only the Default theme renders per-account blocks; the other 13 themes are unchanged from upstream.
 
 ## Data Sources & Privacy
 
 - Nothing here calls an LLM inference API or spends a token. Every network call below is a quota metadata read.
 - **Claude:** the statusLine hook file while Claude Code runs locally; otherwise, at most every 10 minutes, Anthropic's OAuth usage endpoint (the one behind `/usage`) with the access token Claude Code keeps in the macOS Keychain. The token is only read: never refreshed or written back, so Claude Code stays signed in. macOS may ask once to allow Keychain access.
-- **Codex:** local session logs, plus `codex app-server`'s `account/rateLimits/read` for Codex's own login; Codex handles its own sign-in.
+- **Codex:** local session logs, plus, for Codex's own login, the ChatGPT backend's usage endpoint (the one behind `/status`) with the access token in `~/.codex/auth.json`, read and never refreshed. When that token has expired, `codex app-server` is asked instead, which lets Codex refresh it.
 - Per-account Codex quota comes from OpenCodex's local cache, `~/.opencodex/codex-quota-cache.json`. Account labels come from `ocx account list openai --json`, whose output OpenCodex already masks. `usage` never opens `codex-accounts.json` (it holds OAuth tokens) and never runs `ocx account refresh`, which would probe upstream.
 - Other network access is the same as upstream: Antigravity's quota endpoint if you use it, the public Claude and Codex status pages, a public model-pricing table, and the update check. The update check looks at upstream's releases and only opens a browser page; turn it off in the menu if you don't want the prompt.
 
