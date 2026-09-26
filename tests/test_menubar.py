@@ -819,6 +819,40 @@ def test_switch_panel_cancel_keeps_the_panel_open(
     assert delegate.popover.shown == 0
 
 
+def test_popover_closes_after_losing_key_focus() -> None:
+    class FakePopover:
+        def __init__(self) -> None:
+            self.closed = 0
+
+        def isVisible(self) -> bool:
+            return True
+
+        def isKeyWindow(self) -> bool:
+            return False
+
+        def close(self) -> None:
+            self.closed += 1
+
+    delegate = menubar.AppDelegate.alloc().initWithMock_interval_(True, 60)
+    delegate.popover = FakePopover()
+
+    delegate.closePopoverAfterFocusLoss_(None)
+
+    assert delegate.popover.closed == 1
+
+
+def test_popover_stays_open_if_it_regains_key_focus() -> None:
+    popover = SimpleNamespace(
+        isVisible=lambda: True,
+        isKeyWindow=lambda: True,
+        close=lambda: pytest.fail("key popover must stay open"),
+    )
+    delegate = menubar.AppDelegate.alloc().initWithMock_interval_(True, 60)
+    delegate.popover = popover
+
+    delegate.closePopoverAfterFocusLoss_(None)
+
+
 def test_auto_update_disabled_skips_background_check(monkeypatch: pytest.MonkeyPatch) -> None:
     called = False
 

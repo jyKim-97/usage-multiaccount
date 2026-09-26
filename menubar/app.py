@@ -742,6 +742,12 @@ class AppDelegate(NSObject):
         button = self.status_item.button()
         self._show_popover_from_button(button)
 
+    def windowDidResignKey_(self, _notification: Any) -> None:
+        self.performSelector_withObject_afterDelay_("closePopoverAfterFocusLoss:", None, 0.0)
+    def closePopoverAfterFocusLoss_(self, _sender: Any) -> None:
+        if self._panel_window_is_visible() and not bool(self.popover.isKeyWindow()):
+            self.popover.close()
+
     def _refresh(self, queue_if_busy: bool = False) -> None:
         if self._refresh_in_flight:
             if queue_if_busy:

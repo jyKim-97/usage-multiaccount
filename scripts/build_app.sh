@@ -14,5 +14,8 @@ echo "Size before prune: $(du -sh "$APP" | cut -f1)"
 find "$APP" -type d -name '__pycache__' -prune -exec rm -rf {} +
 find "$APP" -type f -name '*.opt-1.pyc' -delete
 rm -rf "$APP/Contents/Resources/include"
+# py2app signs before the pruning above; removing sealed resources invalidates
+# that signature, so seal the final bundle again after its contents stabilize.
+codesign --force --deep --sign - "$APP"
 echo "Size after prune: $(du -sh "$APP" | cut -f1)"
 echo "Built: dist/usage.app"

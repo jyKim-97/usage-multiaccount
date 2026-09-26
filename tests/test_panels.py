@@ -189,6 +189,17 @@ def test_shared_core_exposes_optional_system_accent_as_css_variable() -> None:
     assert 'root.style.removeProperty("--usage-system-accent")' in core_script
 
 
+def test_quota_cards_do_not_add_animated_critical_borders() -> None:
+    panel_dir = Path(__file__).resolve().parent.parent / "assets" / "panels"
+    core_script = (panel_dir / "panel_core.js").read_text(encoding="utf-8")
+
+    assert "data-critical" not in core_script
+    for filename in ("classic.html", "migration.html"):
+        html = (panel_dir / filename).read_text(encoding="utf-8")
+        assert "halo-spin" not in html, filename
+        assert 'data-critical="true"' not in html, filename
+
+
 def test_shared_core_cycles_through_yesterday_and_updates_footer() -> None:
     core_path = Path(__file__).resolve().parent.parent / "assets" / "panels" / "panel_core.js"
     core_script = core_path.read_text(encoding="utf-8")
