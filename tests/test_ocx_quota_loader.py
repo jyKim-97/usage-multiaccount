@@ -129,3 +129,25 @@ def test_payload_carries_accounts() -> None:
     assert [a["label"] for a in rendered] == ["plus", "free"]
     assert [r["title"] for r in rendered[0]["rows"]] == ["Session", "Weekly"]
     assert [r["title"] for r in rendered[1]["rows"]] == ["Monthly"]
+    assert rendered[0]["email"] == "j***g@example.com"
+
+
+@pytest.mark.parametrize(
+    ("email", "expected"),
+    [
+        ("j***g@example.com", "j***g@example.com"),
+        ("jungyoung@example.com", "j***g@example.com"),
+        ("ab@example.com", "a***@example.com"),
+        ("no-at-sign", "no-at-sign"),
+    ],
+)
+def test_masked_email(email: str, expected: str) -> None:
+    assert ocx_quota_loader.masked_email(email) == expected
+
+
+def test_account_list_carries_masked_email() -> None:
+    parsed = ocx_quota_loader.parse_account_list(
+        json.dumps({"accounts": [{"id": "a", "label": "plus", "email": "jungyoung@example.com"}]})
+    )
+    assert parsed is not None
+    assert parsed[0]["a"].email == "j***g@example.com"

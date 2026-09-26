@@ -48,6 +48,7 @@ class AccountInfo:
     label: str
     plan: str | None
     active: bool
+    email: str | None = None  # masked, e.g. "j***g@example.com"
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +66,7 @@ class AccountQuota:
     plan: str | None
     active: bool
     updated_at: float | None  # epoch seconds
+    email: str | None
     windows: tuple[QuotaWindow, ...]
 
 
@@ -100,6 +102,7 @@ def load_account_quotas(*, now: float | None = None) -> tuple[AccountQuota, ...]
                 plan=info.plan if info else None,
                 active=info.active if info else False,
                 updated_at=_epoch_seconds(raw.get("updatedAt")),
+                email=info.email if info else None,
                 windows=_windows(raw),
             )
         )
@@ -215,10 +218,22 @@ def parse_account_list(output: str) -> tuple[dict[str, AccountInfo], tuple[str, 
         account_id = account["id"]
         label = account.get("label")
         plan = account.get("plan")
+        email = account.get("email")
         infos[account_id] = AccountInfo(
             label=label if isinstance(label, str) and label else _fallback_label(account_id),
             plan=plan if isinstance(plan, str) and plan else None,
             active=account.get("active") is True,
+            email=masked_email(email) if isinstance(email, str) and email else None,
         )
         order.append(account_id)
     return infos, tuple(order)
+
+
+def masked_email(email: str) -> str:
+    """Keep ocx's own masking; mask the local part ourselves if it arrives bare."""
+    local, at, domain = email.partition("@")
+    if not at or "*" in local:
+        return email
+    if len(local) <= 2:
+        return f"{local[:1]}***@{domain}"
+    return f"{local[0]}***{local[-1]}@{domain}"

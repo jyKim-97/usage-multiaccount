@@ -542,7 +542,7 @@ def test_quota_row_keeps_reset_text_when_percent_is_below_warning_floor() -> Non
 
 
 def test_today_title_mock() -> None:
-    assert menubar._today_title(mock=True, language="zh-TW") == "今日：$45.20 (50,193,442 tokens)"
+    assert menubar._today_title(mock=True, language="zh-TW") == "今日：$45.20 (50.2M tokens)"
 
 
 def test_today_title_returns_zero_fallback_when_loaders_fail(
@@ -1422,7 +1422,7 @@ def test_error_state_uses_message_and_mock_today_title() -> None:
     state = menubar._error_state("boom", mock=True, language="zh-TW")
 
     assert "boom" in state.status_text
-    assert state.today_text == "今日：$45.20 (50,193,442 tokens)"
+    assert state.today_text == "今日：$45.20 (50.2M tokens)"
 
 
 def test_popover_size_has_positive_dimensions() -> None:

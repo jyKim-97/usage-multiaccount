@@ -105,7 +105,7 @@ WINDOWS_PANELS = (
 # heights and status-wrap growth) so the brief pre-measurement window isn't
 # ~17-24pt too tall.
 PANEL_HEIGHTS = {
-    "classic": 1132,
+    "classic": 630,
     "matrix": 1174,
     "win95": 1183,
     "newspaper": 1179,

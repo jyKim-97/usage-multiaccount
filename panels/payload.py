@@ -150,6 +150,7 @@ def _state_payload(
                 "label": account.label,
                 "plan": account.plan,
                 "active": account.active,
+                "email": account.email,
                 "rows": [_row_payload(row) for row in account.rows],
                 "stale": account.stale,
             }

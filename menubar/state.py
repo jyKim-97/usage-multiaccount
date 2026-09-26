@@ -34,6 +34,7 @@ from quota.usage_rate import GROUP_NAMES
 from service_status import ServiceStatus
 from usage_client import PollOutcome, PollState
 from usage_common.time_utils import parse_iso8601_utc_or_raise
+from usage_common.token_format import compact_tokens
 
 if TYPE_CHECKING:
     from menubar.codex_accounts import CodexAccountState
@@ -1171,7 +1172,7 @@ def _today_title(
     entries: list[UsageEntry] | None = None,
 ) -> str:
     if mock:
-        return _t(language, "today_text", cost="45.20", tokens="50,193,442")
+        return _t(language, "today_text", cost="45.20", tokens="50.2M")
 
     try:
         today = datetime.now().astimezone().date()
@@ -1195,7 +1196,7 @@ def _today_title(
             logger.warning("today totals load failed", exc_info=True)
         return _t(language, "today_text", cost="0.00", tokens="0")
 
-    return _t(language, "today_text", cost=f"{total_cost:.2f}", tokens=f"{total_tokens:,}")
+    return _t(language, "today_text", cost=f"{total_cost:.2f}", tokens=compact_tokens(total_tokens))
 
 
 def _yesterday_title(
@@ -1204,7 +1205,7 @@ def _yesterday_title(
     entries: list[UsageEntry] | None = None,
 ) -> str:
     if mock:
-        return _t(language, "yesterday_text", cost="41.10", tokens="48,200,000")
+        return _t(language, "yesterday_text", cost="41.10", tokens="48.2M")
 
     try:
         yesterday = datetime.now().astimezone().date() - timedelta(days=1)
@@ -1227,5 +1228,5 @@ def _yesterday_title(
         language,
         "yesterday_text",
         cost=f"{total_cost:.2f}",
-        tokens=f"{total_tokens:,}",
+        tokens=compact_tokens(total_tokens),
     )

@@ -39,6 +39,7 @@ class CodexAccountState:
     plan: str | None
     active: bool
     rows: tuple[QuotaRowState, ...]
+    email: str | None = None
     stale: CodexStaleState | None = None
 
 
@@ -62,6 +63,7 @@ def _account_state(account: AccountQuota, now: float, language: str) -> CodexAcc
         plan=account.plan,
         active=account.active,
         rows=tuple(_window_row(window, now, language) for window in account.windows),
+        email=account.email,
         stale=stale,
     )
 
@@ -90,6 +92,7 @@ def _mock_accounts(now: float) -> tuple[AccountQuota, ...]:
             plan="plus",
             active=True,
             updated_at=now - 60,
+            email="j***g@example.com",
             windows=(
                 QuotaWindow("short", 55.0, now + 2 * 3600, 18000.0),
                 QuotaWindow("weekly", 20.0, now + 5 * 86400, 7 * 86400.0),
@@ -101,6 +104,7 @@ def _mock_accounts(now: float) -> tuple[AccountQuota, ...]:
             plan="free",
             active=False,
             updated_at=now - 60,
+            email="k***m@example.ac.kr",
             windows=(QuotaWindow("monthly", 12.0, now + 20 * 86400, 30 * 86400.0),),
         ),
     )

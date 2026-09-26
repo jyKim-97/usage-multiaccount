@@ -271,6 +271,12 @@
         name.className = "codex-account-name";
         name.textContent = account.label || "--";
         head.appendChild(name);
+        if (account.email) {
+          const id = document.createElement("span");
+          id.className = "codex-account-id";
+          id.textContent = account.email;
+          head.appendChild(id);
+        }
         if (account.stale && account.stale.ageText) {
           const age = document.createElement("span");
           age.className = "codex-account-stale";

@@ -417,7 +417,8 @@ def test_panel_position_is_clamped_and_persisted_on_hide(
 
     controller._place_window()
 
-    assert moves == [(634, 12)]
+    # Classic (804pt) fits the 1080pt work area unscaled: 1000 - 380 wide - 12 margin.
+    assert moves == [(608, 12)]
     window.x, window.y = 123, 234
     controller.show_panel()
     assert prefs._load_preferences()["usage.windowPosition"] == {"x": 123, "y": 234}

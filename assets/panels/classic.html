@@ -260,6 +260,16 @@
       content: "● ";
     }
 
+    .codex-account-id {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
     .codex-account-stale {
       margin-left: auto;
       text-transform: none;
@@ -766,6 +776,331 @@
     .card[data-card="agy"] .agy-group-toggle:focus-visible {
       background: color-mix(in srgb, var(--agy) 25%, transparent);
     }
+
+    /* ---- Compact skin (fork) ----------------------------------------------
+       Modelled on a native SwiftUI menu-bar popover: one system typeface,
+       headline/caption sizes, a single surface split by hairlines instead of
+       floating cards. Kept as one override block so the upstream rules above
+       stay untouched and merges only ever conflict here. */
+    :root {
+      --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Helvetica Neue", sans-serif;
+      --mono: var(--font);
+      --bg: #1f2023;
+      --line: rgba(255, 255, 255, 0.10);
+      --track: rgba(255, 255, 255, 0.10);
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f4f6;
+        --line: rgba(0, 0, 0, 0.10);
+        --track: rgba(0, 0, 0, 0.08);
+      }
+    }
+
+    html,
+    body,
+    button,
+    .switch,
+    .action {
+      font-family: var(--font);
+    }
+
+    body {
+      padding: 6px 14px;
+      background: var(--bg);
+    }
+
+    .wrap {
+      gap: 0;
+    }
+
+    .card,
+    .footer {
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .wrap > .card {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card::before {
+      display: none;
+    }
+
+    .card.is-dragging {
+      background: var(--bg);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+    }
+
+    .brand {
+      height: 20px;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+
+    .brand img,
+    .brand-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      box-shadow: none;
+    }
+
+    .brand-icon {
+      font-size: 13px;
+    }
+
+    .card[data-card="agy"] .brand-icon svg,
+    .card[data-card="grok"] .brand-icon svg,
+    .brand-icon svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .brand h1 {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 16px;
+    }
+
+    /* One text line per quota (title, reset, percent on a shared baseline)
+       over the bar, instead of title / bar / reset on three lines. The row
+       markup comes from panel_core.js, so the regrouping is done in CSS. */
+    .row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "title reset percent"
+        "track track track";
+      align-items: baseline;
+      column-gap: 6px;
+      row-gap: 4px;
+    }
+
+    .row + .row {
+      border-top: 0;
+      margin-top: 8px;
+      padding-top: 0;
+    }
+
+    .row-head {
+      display: contents;
+    }
+
+    .row-title {
+      grid-area: title;
+      font-size: 12px;
+      line-height: 15px;
+      font-weight: 400;
+    }
+
+    .percent {
+      grid-area: percent;
+      font-size: 12px;
+      line-height: 15px;
+      font-weight: 600;
+    }
+
+    /* No 80% tick: the percent colour already turns at the thresholds. */
+    .track {
+      grid-area: track;
+      align-self: center;
+      height: 4px;
+      background: var(--track);
+      box-shadow: none;
+    }
+
+    .fill {
+      background-image: none;
+      box-shadow: none;
+    }
+
+    .reset {
+      grid-area: reset;
+      margin-top: 0;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+      font-size: 10px;
+      line-height: 13px;
+      font-weight: 400;
+    }
+
+    .switch {
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 20px;
+    }
+
+    .switch[data-active="true"] {
+      background: color-mix(in srgb, var(--projects) 24%, transparent);
+      box-shadow: none;
+    }
+
+    .codex-stale,
+    .codex-credits,
+    .codex-account-head {
+      font-size: 11px;
+    }
+
+    .codex-account + .codex-account {
+      margin-top: 8px;
+      padding-top: 8px;
+    }
+
+    .codex-account-head {
+      margin-bottom: 5px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .card[data-card="projects"] .brand {
+      grid-template-columns: 18px minmax(0, 1fr);
+      row-gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .project-actions {
+      gap: 6px;
+    }
+
+    .proj-row {
+      grid-template-columns: 14px minmax(0, 1fr) auto auto;
+      gap: 6px;
+      padding: 5px 0 7px;
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .proj-rank {
+      width: 14px;
+      height: 14px;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .proj-tokens {
+      min-width: 72px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+
+    .proj-cost {
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+
+    .proj-bar,
+    .proj-row:first-child .proj-bar {
+      height: 2px;
+    }
+
+    /* Footer: today's total, then status text and borderless actions on one
+       line, like a native popover's caption row. */
+    .footer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      column-gap: 8px;
+      row-gap: 4px;
+      min-height: 0;
+      padding: 10px 0 2px;
+    }
+
+    [data-footer="service-alerts"] {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+
+    .service-alert {
+      margin-bottom: 0;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-size: 11px;
+      line-height: 14px;
+      font-weight: 500;
+    }
+
+    .today {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+      font-size: 12px;
+      line-height: 16px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+
+    .meta {
+      grid-column: 1;
+      grid-row: 3;
+      flex-wrap: nowrap;
+      gap: 0;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .meta > div {
+      flex: 0 1 auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: none;
+      font-size: 10px;
+      line-height: 13px;
+      font-weight: 400;
+    }
+
+    .meta > div + div::before {
+      content: "\00a0·\00a0";
+    }
+
+    .actions {
+      grid-column: 2;
+      grid-row: 3;
+      gap: 2px;
+      margin-top: 0;
+    }
+
+    .action,
+    .action.primary,
+    .action[data-action="install"][data-visible="true"] {
+      flex: none;
+      min-height: 20px;
+      padding: 0 6px;
+      border: 0;
+      border-radius: 5px;
+      background: none;
+      box-shadow: none;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 20px;
+      white-space: nowrap;
+    }
+
+    .action.primary {
+      color: var(--codex);
+    }
+
+    .action:hover,
+    .action.primary:hover,
+    .action:not(.primary):hover {
+      border: 0;
+      background: var(--button-hover);
+      color: var(--text);
+    }
   </style>
 </head>
 <body>
@@ -859,7 +1194,6 @@
         <button class="action" data-action="quit" data-i18n="quit">⏻ Quit</button>
         <button class="action" data-action="install" data-i18n="install_hook">Install Hook</button>
       </div>
-      <p class="attribution">based on <a href="https://github.com/aqua5230/usage" target="_blank">usage</a> by lollapalooza</p>
     </section>
   </main>
 
