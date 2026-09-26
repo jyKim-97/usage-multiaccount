@@ -15,6 +15,14 @@ from menubar.state import PopoverState, QuotaRowState
 
 
 def user_notification_center() -> tuple[Any, dict[str, int]]:
+    from Foundation import NSBundle
+
+    # Unbundled runs (`uv run python main.py`) have no bundle identifier, and
+    # currentNotificationCenter then raises an ObjC exception that aborts the
+    # process instead of surfacing as a catchable Python error.
+    if NSBundle.mainBundle().bundleIdentifier() is None:
+        raise RuntimeError("user notifications need an app bundle")
+
     from UserNotifications import (
         UNAuthorizationOptionAlert,
         UNAuthorizationOptionBadge,
