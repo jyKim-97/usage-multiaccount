@@ -53,6 +53,15 @@ def codex_account_states(*, mock: bool, language: str) -> tuple[CodexAccountStat
     return tuple(_account_state(account, now, language) for account in accounts)
 
 
+def active_account_percent(accounts: tuple[CodexAccountState, ...]) -> float | None:
+    """The active account's shortest window (5-hour, else weekly, else monthly)."""
+    for account in accounts:
+        if not account.active:
+            continue
+        return next((row.percent for row in account.rows if row.percent is not None), None)
+    return None
+
+
 def _account_state(account: AccountQuota, now: float, language: str) -> CodexAccountState:
     stale = None
     if account.updated_at is not None:

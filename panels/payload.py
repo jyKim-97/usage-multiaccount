@@ -11,6 +11,8 @@ from functools import cache, lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from usage_common.token_format import compact_tokens
+
 if TYPE_CHECKING:
     from menubar.state import PopoverState, QuotaRowState
 
@@ -187,7 +189,8 @@ def _state_payload(
 
 
 def _fmt_tokens(tokens: int) -> str:
-    return f"{tokens:,}"
+    # Fork: rankings only need the scale ("4.8M"), not every digit.
+    return compact_tokens(tokens)
 
 
 def _fmt_cost(cost: float | None) -> str:

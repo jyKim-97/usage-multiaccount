@@ -25,6 +25,7 @@ from menubar.chrome import (
     _grok_menubar_icon,
     _menubar_icon_attachment_string,
 )
+from menubar.codex_accounts import active_account_percent
 from menubar.state import PopoverState, _format_percent
 
 
@@ -61,6 +62,15 @@ def _menubar_text_string(app: _TitleApp, text: str) -> Any:
     return attributed
 
 
+def _codex_title_pct(app: _TitleApp, state: PopoverState) -> float | None:
+    # The OpenCodex account now routing requests beats Codex's own session
+    # logs, which stop updating when requests go through the ocx proxy.
+    active = active_account_percent(state.codex_accounts)
+    if active is not None:
+        return active
+    return None if app.codex_5h_pct is None else float(app.codex_5h_pct)
+
+
 def _menubar_attributed_title(app: _TitleApp, state: PopoverState) -> Any:
     title = NSMutableAttributedString.alloc().init()
     if not state.hide_claude:
@@ -71,10 +81,9 @@ def _menubar_attributed_title(app: _TitleApp, state: PopoverState) -> Any:
         )
         title.appendAttributedString_(_menubar_icon_attachment_string(_claude_menubar_icon()))
         title.appendAttributedString_(_menubar_text_string(app, f" {claude_percent}"))
-    if not state.hide_codex and (app.codex_5h_pct is not None or state.hide_claude):
-        codex_percent = (
-            "--" if app.codex_5h_pct is None else f"{_format_percent(float(app.codex_5h_pct))}%"
-        )
+    codex_pct = _codex_title_pct(app, state)
+    if not state.hide_codex and (codex_pct is not None or state.hide_claude):
+        codex_percent = "--" if codex_pct is None else f"{_format_percent(codex_pct)}%"
         if not state.hide_claude:
             title.appendAttributedString_(_menubar_text_string(app, "  "))
         title.appendAttributedString_(_menubar_icon_attachment_string(_codex_menubar_icon()))
@@ -127,8 +136,9 @@ def _compose_title(app: _TitleApp, state: PopoverState) -> str:
             else f"{_format_percent(state.claude_session.percent)}%"
         )
         parts.append(claude)
-    if not state.hide_codex and (app.codex_5h_pct is not None or state.hide_claude):
-        codex = "--" if app.codex_5h_pct is None else f"{_format_percent(float(app.codex_5h_pct))}%"
+    codex_pct = _codex_title_pct(app, state)
+    if not state.hide_codex and (codex_pct is not None or state.hide_claude):
+        codex = "--" if codex_pct is None else f"{_format_percent(codex_pct)}%"
         parts.append(codex)
     if not state.hide_agy and state.agy_session.percent is not None:
         agy = f"{_format_percent(state.agy_session.percent)}%"

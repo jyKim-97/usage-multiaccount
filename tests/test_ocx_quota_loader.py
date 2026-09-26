@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -151,3 +152,12 @@ def test_account_list_carries_masked_email() -> None:
     )
     assert parsed is not None
     assert parsed[0]["a"].email == "j***g@example.com"
+
+
+def test_active_account_percent_prefers_active_shortest_window() -> None:
+    plus, free = codex_accounts.codex_account_states(mock=True, language="en")
+    assert codex_accounts.active_account_percent((plus, free)) == 55.0  # plus is active in mock
+    inactive = tuple(replace(account, active=False) for account in (plus, free))
+    assert codex_accounts.active_account_percent(inactive) is None
+    free_active = (replace(plus, active=False), replace(free, active=True))
+    assert codex_accounts.active_account_percent(free_active) == 12.0  # monthly-only plan

@@ -230,8 +230,12 @@
       display: none;
     }
 
-    .card[data-card="codex"][data-has-accounts="true"] > [data-row] {
-      display: none;
+    /* With OpenCodex accounts shown, the card's own rows and their staleness
+       badge describe Codex's session logs, which a proxied setup stops
+       writing; each account block carries its own staleness instead. */
+    .card[data-card="codex"][data-has-accounts="true"] > [data-row],
+    .card[data-card="codex"][data-has-accounts="true"] [data-codex-stale] {
+      display: none !important;
     }
 
     .codex-account + .codex-account {
@@ -989,7 +993,7 @@
     }
 
     .proj-tokens {
-      min-width: 72px;
+      min-width: 44px;
       font-weight: 600;
       letter-spacing: 0;
     }
