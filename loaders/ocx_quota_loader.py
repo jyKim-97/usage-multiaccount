@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 OCX_HOME = Path(os.path.expanduser("~/.opencodex"))
 QUOTA_CACHE_FILENAME = "codex-quota-cache.json"
+# Non-secret settings; lists pooled accounts and the active one. Read only as a
+# fallback for labels when the proxy is down (OAuth tokens live elsewhere).
+CONFIG_FILENAME = "config.json"
 MAIN_ACCOUNT_ID = "__main__"
 MAIN_ACCOUNT_FALLBACK_LABEL = "main"
 LABEL_TTL_SECONDS = 300.0
@@ -166,6 +169,8 @@ def _account_infos(now: float) -> tuple[dict[str, AccountInfo], tuple[str, ...]]
         if _label_checked_at is None or now - _label_checked_at >= LABEL_TTL_SECONDS:
             _label_checked_at = now
             fetched = _fetch_account_list()
+            if fetched is None and not _label_cache:
+                fetched = read_config_accounts(OCX_HOME / CONFIG_FILENAME)
             if fetched is not None:
                 _label_cache, _label_order = fetched
         return dict(_label_cache), _label_order
@@ -237,3 +242,38 @@ def masked_email(email: str) -> str:
     if len(local) <= 2:
         return f"{local[:1]}***@{domain}"
     return f"{local[0]}***{local[-1]}@{domain}"
+
+
+def read_config_accounts(path: Path) -> tuple[dict[str, AccountInfo], tuple[str, ...]] | None:
+    """Labels, plans and the active account from ocx's config, without the proxy.
+
+    The Codex App login (`__main__`) isn't listed there; it keeps its fallback
+    label until a live probe supplies its plan.
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    accounts = data.get("codexAccounts")
+    if not isinstance(accounts, list):
+        return None
+    active_id = data.get("activeCodexAccountId")
+    main_active = not isinstance(active_id, str) or active_id in ("", "main", MAIN_ACCOUNT_ID)
+    infos = {MAIN_ACCOUNT_ID: AccountInfo(MAIN_ACCOUNT_FALLBACK_LABEL, None, main_active)}
+    order = [MAIN_ACCOUNT_ID]
+    for account in accounts:
+        if not isinstance(account, dict) or not isinstance(account.get("id"), str):
+            continue
+        account_id = account["id"]
+        plan = account.get("plan")
+        email = account.get("email")
+        infos[account_id] = AccountInfo(
+            label=plan if isinstance(plan, str) and plan else _fallback_label(account_id),
+            plan=plan if isinstance(plan, str) and plan else None,
+            active=account_id == active_id,
+            email=masked_email(email) if isinstance(email, str) and email else None,
+        )
+        order.append(account_id)
+    return infos, tuple(order)

@@ -881,14 +881,15 @@ def build_popover_state(
             window_seconds=WEEKLY_WINDOW_SECONDS,
         )
         status_value = _status_message_value(outcome, "status_synced", language)
-        if snapshot.is_stale or snapshot.data_source != "hook":
+        live_source = snapshot.data_source in ("hook", "oauth-api")
+        if snapshot.is_stale or not live_source:
             status_value = _status_message_value(outcome, "data_stale_hint", language)
         status_text = _t(
             language,
             "status_text",
             value=status_value,
         )
-        status_long = bool(outcome.message) or snapshot.is_stale or snapshot.data_source != "hook"
+        status_long = bool(outcome.message) or snapshot.is_stale or not live_source
     else:
         claude_session = _missing_row(_t(language, "session_label"), CLAUDE_COLOR, language)
         claude_weekly = _missing_row(_t(language, "weekly_label"), CLAUDE_COLOR, language)

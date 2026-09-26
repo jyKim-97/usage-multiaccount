@@ -108,7 +108,7 @@ def test_labels_are_cached_and_survive_a_failed_refresh(monkeypatch: pytest.Monk
 def test_account_states_blank_a_window_whose_reset_passed(monkeypatch: pytest.MonkeyPatch) -> None:
     rolled_over = {**PLUS, "shortResetAt": int(NOW - 60)}
     _write_cache({"__main__": rolled_over})
-    monkeypatch.setattr(codex_accounts.time, "time", lambda: NOW)
+    monkeypatch.setattr("menubar.codex_accounts.time.time", lambda: NOW)
 
     (state,) = codex_accounts.codex_account_states(mock=False, language="en")
 
@@ -161,3 +161,14 @@ def test_active_account_percent_prefers_active_shortest_window() -> None:
     assert codex_accounts.active_account_percent(inactive) is None
     free_active = (replace(plus, active=False), replace(free, active=True))
     assert codex_accounts.active_account_percent(free_active) == 12.0  # monthly-only plan
+
+
+def test_fsevents_keeps_only_the_quota_cache_from_ocx() -> None:
+    import fsevents_watch
+
+    cache = str(ocx_quota_loader.quota_cache_path())
+    other = str(ocx_quota_loader.OCX_HOME / "usage.jsonl")
+    codex = "/tmp/codex/sessions/a.jsonl"
+    paths, flags = fsevents_watch.drop_unrelated_ocx_events([cache, other, codex], [1, 2, 3])
+    assert paths == [cache, codex]
+    assert flags == [1, 3]

@@ -19,6 +19,7 @@ from typing import Any
 
 from i18n import _t
 from installer.setup_hook import current_hook_state
+from loaders import claude_usage_api
 from loaders.claude_paths import claude_config_dirs, claude_json_path
 from usage_common.usage_lang import detect_lang
 
@@ -30,6 +31,8 @@ TT_STATUS_FILE = os.path.expanduser("~/.claude/tt-status.json")
 
 # Stale files only affect hints; quota values still render.
 STALE_SECONDS = 6 * 3600
+# Snapshot taken from Anthropic's OAuth usage endpoint (fork); live, like "hook".
+API_DATA_SOURCE = "oauth-api"
 RECENT_ACTIVITY_SECONDS = 30 * 60
 RECENT_ACTIVITY_CACHE_TTL_SECONDS = 75
 HOOK_BROKEN_NOT_INSTALLED = "hook_broken_not_installed"
@@ -366,6 +369,37 @@ class ClaudeUsageClient:
     async def fetch_once(self) -> PollOutcome:
         if self.mock:
             return self._mock_outcome()
+        return self._with_api_quota(await self._fetch_local())
+
+    def _with_api_quota(self, outcome: PollOutcome) -> PollOutcome:
+        # Fork: the statusLine hook only sees Claude Code running on this
+        # machine. The OAuth usage endpoint reports the account-wide quota, so
+        # it takes over whenever it is newer than the local snapshot.
+        local = outcome.snapshot if outcome.state == PollState.SUCCESS else None
+        local_polled_at = local.polled_at if local is not None else None
+        try:
+            api = claude_usage_api.latest_quota(local_polled_at=local_polled_at)
+        except Exception:
+            return outcome
+        if api is None or (local_polled_at is not None and api.fetched_at <= local_polled_at):
+            return outcome
+        now = time.time()
+        five_reset = api.five_hour_resets_at or 0.0
+        seven_reset = api.seven_day_resets_at or 0.0
+        return self._success_outcome(
+            UsageSnapshot(
+                current_percent=0 if 0 < five_reset < now else _pct(api.five_hour_percent),
+                current_reset_at=five_reset,
+                weekly_percent=0 if 0 < seven_reset < now else _pct(api.seven_day_percent),
+                weekly_reset_at=seven_reset,
+                current_status="",
+                polled_at=api.fetched_at,
+                is_stale=(now - api.fetched_at) > STALE_SECONDS,
+                data_source=API_DATA_SOURCE,
+            )
+        )
+
+    async def _fetch_local(self) -> PollOutcome:
 
         claude_json_snapshot = self._read_claude_json_snapshot_cached()
 

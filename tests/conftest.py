@@ -54,7 +54,7 @@ def _isolate_claude_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> I
 
 @pytest.fixture(autouse=True)
 def _isolate_ocx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Keep refreshes out of the real ~/.opencodex and never spawn the ocx CLI."""
+    """Keep refreshes off the real ~/.opencodex, the ocx / codex CLIs and the network."""
     from loaders import ocx_quota_loader
 
     monkeypatch.setattr(ocx_quota_loader, "OCX_HOME", tmp_path / "opencodex")
@@ -62,6 +62,18 @@ def _isolate_ocx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(ocx_quota_loader, "_label_cache", {})
     monkeypatch.setattr(ocx_quota_loader, "_label_order", ())
     monkeypatch.setattr(ocx_quota_loader, "_label_checked_at", None)
+
+    from loaders import codex_app_server_probe
+
+    monkeypatch.setattr(codex_app_server_probe, "_probe", lambda: None)
+    monkeypatch.setattr(codex_app_server_probe, "_cached", None)
+    monkeypatch.setattr(codex_app_server_probe, "_next_probe_at", 0.0)
+
+    from loaders import claude_usage_api
+
+    monkeypatch.setattr(claude_usage_api, "_poll", lambda: (None, None, None))
+    monkeypatch.setattr(claude_usage_api, "_cached", None)
+    monkeypatch.setattr(claude_usage_api, "_next_poll_at", 0.0)
 
 
 @pytest.fixture(autouse=True)

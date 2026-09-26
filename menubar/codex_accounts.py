@@ -9,11 +9,12 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 
 from i18n import _t
-from loaders import ocx_quota_loader
+from loaders import codex_app_server_probe, ocx_quota_loader
+from loaders.codex_app_server_probe import CodexLiveQuota
 from loaders.ocx_quota_loader import AccountQuota, QuotaWindow
 from menubar.state import (
     CODEX_COLOR,
@@ -46,11 +47,57 @@ class CodexAccountState:
 def codex_account_states(*, mock: bool, language: str) -> tuple[CodexAccountState, ...]:
     now = time.time()
     try:
-        accounts = _mock_accounts(now) if mock else ocx_quota_loader.load_account_quotas(now=now)
+        if mock:
+            accounts = _mock_accounts(now)
+        else:
+            accounts = merge_live_quota(
+                ocx_quota_loader.load_account_quotas(now=now),
+                codex_app_server_probe.live_quota(now=now),
+            )
     except Exception:
         logger.debug("ocx account quota load failed", exc_info=True)
         return ()
     return tuple(_account_state(account, now, language) for account in accounts)
+
+
+def merge_live_quota(
+    accounts: tuple[AccountQuota, ...], live: CodexLiveQuota | None
+) -> tuple[AccountQuota, ...]:
+    """Overlay Codex's own live quota on its OpenCodex entry, or stand in for ocx.
+
+    The live probe only knows the account Codex itself is signed in to, which
+    OpenCodex lists as `__main__`; the newer of the two snapshots wins.
+    """
+    if live is None:
+        return accounts
+    main_id = ocx_quota_loader.MAIN_ACCOUNT_ID
+    if not accounts:
+        return (
+            AccountQuota(
+                account_id=main_id,
+                label=live.plan or "codex",
+                plan=live.plan,
+                active=True,
+                updated_at=live.fetched_at,
+                email=None,
+                windows=live.windows,
+            ),
+        )
+    merged = []
+    for account in accounts:
+        if account.account_id == main_id and live.fetched_at > (account.updated_at or 0.0):
+            label = account.label
+            if label == ocx_quota_loader.MAIN_ACCOUNT_FALLBACK_LABEL and live.plan:
+                label = live.plan
+            account = replace(
+                account,
+                label=label,
+                plan=account.plan or live.plan,
+                updated_at=live.fetched_at,
+                windows=live.windows,
+            )
+        merged.append(account)
+    return tuple(merged)
 
 
 def active_account_percent(accounts: tuple[CodexAccountState, ...]) -> float | None:

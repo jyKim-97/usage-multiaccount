@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from loaders import ocx_quota_loader
 from loaders.codex_paths import codex_home
 
 logger = logging.getLogger(__name__)
@@ -123,9 +124,23 @@ def usage_watch_paths() -> list[Path]:
             home / ".claude" / "projects",
             codex_dir / "sessions",
             codex_dir / "archived_sessions",
+            # Fork: refresh as soon as OpenCodex rewrites its quota cache.
+            ocx_quota_loader.OCX_HOME,
         )
         if path.exists()
     ]
+
+
+def drop_unrelated_ocx_events(paths: list[str], flags: list[int]) -> tuple[list[str], list[int]]:
+    """Keep only the quota cache out of ~/.opencodex, which ocx writes to constantly."""
+    ocx_dir = str(ocx_quota_loader.OCX_HOME) + os.sep
+    cache = str(ocx_quota_loader.quota_cache_path())
+    kept = [
+        (path, flag)
+        for path, flag in zip(paths, flags, strict=False)
+        if not path.startswith(ocx_dir) or path == cache
+    ]
+    return [path for path, _ in kept], [flag for _, flag in kept]
 
 
 def setup_fsevents(delegate: Any) -> Any:
@@ -161,6 +176,9 @@ def setup_fsevents(delegate: Any) -> Any:
                 raw_paths = ctypes.cast(_paths, ctypes.POINTER(ctypes.c_char_p))
                 paths = [os.fsdecode(raw_paths[index]) for index in range(event_count)]
                 flags = [int(_flags[index]) for index in range(event_count)]
+                paths, flags = drop_unrelated_ocx_events(paths, flags)
+                if not paths:
+                    return
                 changes = classify_file_events(paths, flags)
             except Exception:
                 changes = FileEventChanges(frozenset(), needs_full_scan=True)
