@@ -2,211 +2,58 @@
   <img src="readme-logo.png" alt="usage 로고" width="128">
 </p>
 
-# usage
+# usage — 멀티 계정 fork
 
-### macOS 메뉴 막대와 Windows 시스템 트레이에서 Claude Code, Codex, Antigravity, Grok CLI 할당량을 확인하세요.
+### Claude Code와 Codex의 사용 한도를 보여주는 macOS 메뉴 막대 앱입니다. OpenCodex로 Codex 로그인을 여러 개 묶어 쓰면 계정별 한도도 따로 보여줍니다.
 
-세션 중간에 할당량이 소진되면 비용이 큽니다. 특히 Claude Code에 의존하는 긴 리팩터링이나 디버깅 작업에서는 더욱 그렇습니다. `usage`는 한도에 도달하기 *전에* 5시간 및 주간 한도를 표시하고, 작업 내내 계속 보이게 합니다. 실행할 명령이나 열 페이지가 없습니다. 이미 보고 있는 곳에 답이 표시됩니다.
-
-[繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [English](../README.md) · [日本語](README.ja.md) · 한국어 &nbsp;|&nbsp; [Discussions](https://github.com/aqua5230/usage/discussions) &nbsp;|&nbsp; [공식 사이트](https://aqua5230.github.io/usage/)
-
-[![GitHub stars](https://img.shields.io/github/stars/aqua5230/usage?style=flat)](https://github.com/aqua5230/usage/stargazers)
-[![CI](https://github.com/aqua5230/usage/actions/workflows/check.yml/badge.svg)](https://github.com/aqua5230/usage/actions/workflows/check.yml)
-[![최신 릴리스](https://img.shields.io/github/v/release/aqua5230/usage)](https://github.com/aqua5230/usage/releases/latest)
-[![PyPI](https://img.shields.io/pypi/v/usage-cli)](https://pypi.org/project/usage-cli/)
-[![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/)
-[![플랫폼](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/aqua5230/usage/releases/latest)
-[![라이선스: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](../LICENSE)
-[![OpenSSF 모범 사례](https://www.bestpractices.dev/projects/13538/badge)](https://www.bestpractices.dev/projects/13538)
+[English](../README.md) · 한국어
 
 <p align="center">
-  <img src="showcase-v3.en.png" alt="usage — macOS 메뉴 막대에 고정된 Claude Code, Codex, Antigravity 할당량" width="820">
+  <img src="fork-panel.png" alt="이 fork의 compact 기본 패널: Claude Code와 Codex 계정 2개" width="300">
 </p>
 
-Claude Code와 Codex 수치는 이미 컴퓨터에 있는 로그 파일에서 수동적으로 읽어오므로, **할당량을 확인하는 과정에서 Anthropic이나 OpenAI의 LLM API를 호출하지 않으며** token도 전혀 소비하지 않습니다. 유일한 예외인 Antigravity 할당량은 Antigravity CLI가 이미 로컬에 저장해 둔 로그인 정보를 사용해 Google의 공식 할당량 엔드포인트에서 가져오지만, 이 역시 메타데이터 조회일 뿐 모델 할당량을 소비하지 않습니다.
+> lollapalooza의 [aqua5230/usage](https://github.com/aqua5230/usage)를 개인적으로 fork한 버전입니다. 앱에 대한 공로는 모두 원본 프로젝트에 있으며, 전체 기능은 원본 README를 참고하세요. 이 fork는 아래 변경만 더했습니다.
 
-## 빠른 시작
+## 이 fork에서 바꾼 점
+
+- **Codex 여러 계정:** OpenCodex(`ocx`)로 Codex 로그인을 여러 개 묶어 쓰면, Codex 카드에 계정마다 별명, 가려진 이메일, 그 계정의 5시간·주간·월간 한도가 따로 표시됩니다.
+- **compact 기본 패널:** 폭 300pt, macOS 시스템 폰트와 텍스트 스타일, 한도마다 한 줄, 떠 있는 카드 대신 얇은 구분선, 아이콘으로 된 새로고침·종료 버튼.
+- **짧은 합계 표시:** 오늘·어제 토큰 합계를 `11,150,000` 대신 `11.2M`으로 표시합니다.
+- **HTML 리포트도 시스템 폰트**로 표시합니다.
+- **번들 없이 실행 가능:** `uv run python main.py`로 실행해도 시작하자마자 죽지 않습니다. 앱 번들 밖에서는 알림만 꺼집니다.
+
+## 소스에서 실행
+
+필요한 것: macOS와 [uv](https://docs.astral.sh/uv/)(Python 3.13을 알아서 설치합니다). conda의 Python으로는 빌드하지 마세요. conda가 가진 `libffi` / `libsqlite3` 때문에 `.app`이 실행하자마자 종료됩니다.
 
 ```bash
-brew install --cask aqua5230/usage/usage
+uv sync
+uv run python main.py            # 메뉴 막대에서 실행
+uv run python main.py --mock     # 가짜 데이터로 UI 확인
+./scripts/build_app.sh           # dist/usage.app 빌드
+cp -R dist/usage.app /Applications/
 ```
 
-**macOS가 아니라면** `uvx usage-cli`로 어떤 OS에서든 터미널 인터페이스를 열 수 있습니다. Linux도 지원하며 설치가 필요 없고 메뉴 막대도 없습니다.
+새로고침 간격은 기본 60초입니다(`--interval N`, 최소 30초).
 
-Applications 폴더에 자동으로 설치됩니다. 먼저 한 번 실행해 보고, macOS 15 이상에서 차단되면 시스템 설정 → 개인정보 보호 및 보안을 열고 아래로 스크롤한 뒤 **그래도 열기**를 클릭하세요. macOS 14 이하에서는 한 번 마우스 오른쪽 버튼으로 클릭해 **열기**를 선택하여 Gatekeeper를 통과하세요. 그다음 메뉴 막대 아이콘을 클릭하세요. 직접 다운로드하거나 전체 설정 과정을 보고 싶다면 아래 [설치](#설치)를 참고하세요.
+## Codex 여러 계정
 
-**빠른 이동:** [제공 기능](#제공-기능) · [개인정보 보호와 데이터 소스](#개인정보-보호와-데이터-소스) · [요구 사항](#요구-사항) · [설치](#설치) · [상태 줄 설정](#첫-실행-상태-줄-설정) · [Windows 지원](#windows-지원) · [테마 갤러리](#테마-갤러리) · [문제 해결](#문제-해결) · [비교](#비교) · [적합하지 않은 경우](#적합하지-않은-경우) · [개발](#개발)
+1. OpenCodex pool에 계정을 추가합니다(`ocx account login openai`). `ocx`가 계정별 한도를 한 번 가져오면 Codex 카드가 계정별 표시로 바뀝니다.
+2. 계정 이름은 OpenCodex의 별명을 그대로 씁니다. 바꾸려면 `ocx account alias openai <account-id> <이름>`을 실행하세요.
+3. `●`는 지금 요청을 처리하는 계정입니다. `⚠ 약 N분 전`은 OpenCodex가 그 계정의 한도를 한동안 갱신하지 않았다는 뜻입니다. 초기화 시각이 이미 지난 한도는 옛 %를 보여주지 않고 `--`로 표시합니다.
 
-## 제공 기능
+OpenCodex가 없거나 아직 한도를 저장하지 않았으면 원본처럼 Codex 자체 세션 로그에서 읽은 계정 하나만 보여줍니다. 계정별 표시는 기본 테마에만 있고, 나머지 13개 테마는 원본과 같습니다.
 
-### 실시간 가시성
+## 데이터 출처와 개인정보
 
-- **상시 모니터:** 할당량이 메뉴 막대에 상시 표시되며, 녹색부터 빨간색까지 색상으로 구분됩니다. 전체 세션, 주간, 프로젝트별 내역이 필요하면 클릭하세요.
-- **Antigravity 지원:** Antigravity(Gemini)의 세션 및 주간 할당량이 World Cup 2026을 제외한 모든 패널에서 세 번째 카드로 나타납니다(World Cup 2026은 양 팀 HUD로 유지됨). 수치는 Antigravity CLI가 이미 컴퓨터에 저장해 둔 로그인 정보를 사용해 공식 할당량 API에서 직접 가져옵니다. 몇 분마다 자동 갱신되며 리셋 카운트다운도 실시간으로 줄어듭니다. Antigravity에는 독립된 할당량이 두 개 있습니다. 카드는 기본으로 Gemini를 표시하며, 제목 옆의 `Gemini ⇄` 태그를 누르면 Claude / GPT로 전환되고 선택이 기억됩니다.
-- **Grok CLI 지원:** 네 번째 카드는 Grok CLI 자체 로컬 디버그 로그에서 주간 크레딧 비율을 직접 읽어옵니다——네트워크 호출이 없습니다. Grok CLI는 세션이나 소진율 데이터를 제공하지 않으므로 카드에는 단일 주간 막대만 표시됩니다. 하지만 요청별 token 사용량은 Claude Code 및 Codex와 마찬가지로 오늘 비용과 프로젝트 총계에 그대로 반영됩니다.
-- **Muse Code 사용 금액:** Muse Code의 요청별 토큰과 비용이 오늘 비용, 프로젝트 합계, HTML 보고서, `usage` CLI에 반영됩니다. 데이터는 Muse가 로컬에 저장하는 세션 로그에서 읽습니다. Muse에는 로컬 할당량 데이터가 없으므로 Muse 할당량 카드는 없습니다.
-- **서비스 상태 경고:** Claude Code, Claude API 또는 Codex API에 장애나 성능 저하가 발생하면 관련 패널 하단에 주황색/빨간색 경고 배너가 표시되며, 수치는 공식 공개 Statuspage.io 페이지에서만 읽어옵니다(LLM 사용량 API는 절대 호출하지 않음). Antigravity는 공개 상태 페이지가 없으므로 지원되지 않습니다.
-- **컨텍스트 알림 및 알림 센터:** 컨텍스트 창이 70%(빠르게 채워지면 더 일찍)에 도달하면 상태 줄이 `/clear` 또는 `/compact`를 안내해 token 낭비를 막습니다. 할당량 한도와 복구에 관한 시스템 알림도 선택해 받을 수 있습니다.
-- **캐시 건강 상태:** 상태 줄에는 Claude Code의 prompt cache 적중률과 만료 카운트다운이 표시되어, 지금 마무리해도 캐시된 컨텍스트를 재사용할 수 있는지, 아니면 캐시가 식어서 전체를 다시 보내야 하는지 한눈에 파악할 수 있습니다. Claude Code 2.1.251 이상이 필요하며, 구버전에서는 이 섹션이 나타나지 않습니다.
-- **섹션 숨기기:** 일부 도구만 사용하나요? 클릭 한 번으로 Claude Code, Codex, Grok CLI 또는 Antigravity 섹션을 메뉴 막대와 패널에서 완전히 숨길 수 있습니다.
+- Claude Code와 Codex 사용량은 로컬 파일에서 읽습니다. 읽을 때 Anthropic이나 OpenAI의 LLM API를 호출하지 않고 토큰도 쓰지 않습니다.
+- Codex 계정별 한도는 OpenCodex의 로컬 캐시 `~/.opencodex/codex-quota-cache.json`에서 읽습니다. 계정 이름은 `ocx account list openai --json`에서 가져오며, 이 출력은 OpenCodex가 이미 가려서 줍니다. `usage`는 OAuth 토큰이 든 `codex-accounts.json`을 열지 않고, 서버에 다시 조회하는 `ocx account refresh`도 실행하지 않습니다.
+- 그 밖의 네트워크 사용은 원본과 같습니다. 쓰시는 경우 Antigravity 한도 조회, Claude·Codex 공개 상태 페이지, 공개 모델 가격표, 업데이트 확인입니다. 업데이트 확인은 원본의 릴리스를 보고 브라우저 페이지를 여는 것뿐이니, 알림이 싫으면 메뉴에서 끄세요.
 
-### 워크플로 도우미
+## 그 밖의 기능
 
-- **진행 상황 컨시어지:** 새 Claude Code 세션을 열면 `usage`가 마지막 요청, 커밋하지 않은 변경 사항, 미완료 todo를 포함한 이전 진행 상황을 바로 AI에 전달합니다. `/resume`도, 요약도 필요 없습니다. 완전히 로컬에서 작동하며 기본값은 꺼짐입니다.
-- **Token 절약기:** 메뉴 막대 토글은 Claude Code와 Codex에 해당 세션 동안 더 간결하고 쉬운 말로 답하도록 요청하여, 코드와 오류 메시지는 바이트 단위로 그대로 유지하면서 출력 token을 절약합니다. 가벼운 메시지별 알림이 긴 대화에서 답변이 다시 장황해지는 것을 막습니다——실제 세션의 A/B 테스트에서 대화 후반 답변은 약 40% 더 짧게 유지되었으며, 84% 길어지는 현상은 나타나지 않았습니다.
-- **터미널 통합:** `usage status --json`은 명령을 실행할 수 있는 모든 도구——Starship, tmux 또는 자체 스크립트——에 Claude Code 및 Codex 할당량을 전달합니다. 메뉴 막대와 동일한 로컬 파일을 읽으며, 네트워크 호출이 없습니다. [미리 준비된 스니펫](DEVELOPMENT.md#quota-status-for-other-tools-usage-status).
-- **Token 낭비 상태 점검:** 매일 백그라운드 진단이 로그를 검사해 반복 파일 읽기, 오염 디렉터리, 장황한 Bash 출력 등을 포함한 낭비를 찾습니다. 문제가 발견되면 한 줄 알림이 표시됩니다. AI에게 "show me"라고 말하면 해결 방법을 안내합니다.
-
-### AI 팀워크
-
-- **AI 업데이트 일보:** 매일 자동 업데이트되는 공개 [웹 페이지](https://aqua5230.github.io/ai-updates/)를 열어 Claude Code, Codex, Antigravity의 업데이트를 다루고 전체 기록을 보존합니다. 심사가 완료된 업데이트는 5개 언어의 알기 쉬운 요약을, 미심사 항목은 공식 원문을 보여줍니다.
-
-### 보고서와 인사이트
-
-- **심층 HTML 보고서:** 일간 및 주간 token 추세, 프로젝트 순위, 비용을 보여 주는 공유 가능한 HTML 심층 보고서입니다. 기여 히트맵 및 "Wrapped" 요약을 담은 Year in Review가 포함됩니다. "최근 작업" 섹션에는 Claude Code가 최근 대화에 붙인 이름이 나열되어 숫자를 맥락과 함께 볼 수 있습니다. .html, .csv 또는 .png로 내보낼 수 있으며 완전히 오프라인에서 작동하고 프로젝트 이름 마스킹도 선택할 수 있습니다(이 제목들도 함께 가려집니다).
-
-### 경험과 사용자화
-
-- **14가지 시각 테마:** 기본(Default), Matrix, Windows 95, 복고 신문(Newspaper), Cloud Observation, Midnight Aquarium, Prism Arcade, Black Hole, World Cup 2026, 나비 도감(Lepidoptera), 철새 이동(Migration), 스테인드글라스, 종이접기, Catppuccin(공식 팔레트, 4가지 flavor 모두 지원)을 포함한 패널 스타일을 전환할 수 있습니다.
-- **패널 자유 배치:** 패널이 더 이상 메뉴 막대 아이콘 아래에 고정되지 않습니다. 빈 공간을 드래그해 원하는 위치로 이동할 수 있으며, 다음에 열 때도 그 위치가 유지됩니다. 다른 앱으로 포커스가 이동해도 사라지지 않으며, 메뉴 막대 아이콘을 다시 클릭하거나 Esc 키를 눌러야 닫힙니다.
-- **드래그로 순서 변경:** 아무 할당량 카드나 잡고 위아래로 드래그하면 순서를 바꿀 수 있습니다. 배치는 할당량 카드가 있는 모든 테마(World Cup 2026 제외)에서 공유되며 다시 시작해도 유지됩니다.
-- **자동 현지화:** UI 텍스트는 번체 중국어, 간체 중국어, 영어, 일본어, 한국어로 제공되며 시스템 설정에 맞춰 자동으로 전환됩니다.
-
-## 개인정보 보호와 데이터 소스
-
-- Claude Code와 Codex의 수치는 컴퓨터의 **로컬 로그 파일에서만** 읽으며, 이를 읽을 때 **Anthropic 또는 OpenAI의 LLM API를 호출하지 않습니다**.
-- Antigravity 할당량에는 네트워크 연결이 필요하며, 실제로 사용하는 경우에만 해당됩니다: 할당량은 Antigravity CLI가 로그인 후 저장한 OAuth 자격 증명으로 Google의 공식 할당량 엔드포인트에 조회해 가져옵니다——CLI 버전에 따라 macOS 키체인, Windows 자격 증명 관리자, 또는 로컬 token 파일에서 읽습니다. `usage`는 그 자격 증명을 다시 쓰지 않고 읽기만 하며, 갱신된 access token도 메모리에만 보관합니다. 이 호출 자체도 할당량 정보만 읽으며, 모델 할당량을 소비하는 일은 결코 없습니다.
-- 백그라운드 네트워크 활동 범위: 위의 Antigravity 할당량/token 엔드포인트, 장애를 알리기 위한 Claude와 Codex의 공개 상태 페이지, 비용 추정을 위한 공개 모델 가격표(오프라인에서는 내장 가격으로 대체), 그리고 가끔 GitHub에서 새 버전을 확인하는 것입니다. Claude Code와 Codex의 로그 내용은 업로드되지 않습니다.
-
-## 요구 사항
-
-- macOS 12(Monterey) 이상, 또는 Windows 10/11
-- Claude Code, Codex 또는 Antigravity를 한 번 이상 사용한 적이 있어야 합니다(로컬 사용량 데이터가 있어야 함).
-- (소스 실행만 해당) Python 3.13.
-
-## 설치
-
-### 1. Homebrew(권장)
-
-Homebrew로 설치하면 `brew upgrade --cask usage` 한 번으로 최신 상태를 유지할 수 있습니다.
-
-```bash
-brew install --cask aqua5230/usage/usage
-```
-
-*(첫 실행: macOS 15 이상에서는 시스템 설정 → 개인정보 보호 및 보안을 열고 아래로 스크롤한 뒤 **그래도 열기**를 클릭하세요. macOS 14 이하에서는 Finder에서 `usage.app`을 마우스 오른쪽 버튼으로 클릭 → **열기**를 선택해 Gatekeeper를 통과합니다.)*
-
-### 2. macOS용 App 다운로드
-
-1. [GitHub Releases 페이지](https://github.com/aqua5230/usage/releases/latest)에서 최신 `usage.app.zip`을 다운로드합니다.
-2. 압축을 풀고 `usage.app`을 Applications 폴더로 드래그합니다.
-3. 첫 실행: macOS 15 이상에서는 시스템 설정 → 개인정보 보호 및 보안을 열고 아래로 스크롤한 뒤 **그래도 열기**를 클릭하세요. macOS 14 이하에서는 Finder에서 `usage.app`을 마우스 오른쪽 버튼으로 클릭 → **열기** → 열기를 확인합니다.
-
-### 3. uvx(제로 설치, 모든 OS)
-
-`uvx usage-cli`를 실행하면 터미널 인터페이스가 바로 열립니다. uv가 Python 3.13을 자동으로 준비하므로 Python을 따로 설치할 필요가 없습니다.
-
-명령을 계속 사용하려면 `uv tool install usage-cli`를 실행한 뒤 `usage`를 사용합니다(예: `usage status --json`). 이 설치 방식은 CLI만 제공하며 메뉴 막대 App은 포함하지 않습니다.
-
-Linux에서도 `usage setup`으로 Claude Code 상태 줄을 설치할 수 있어 macOS나 Windows와 마찬가지로 프롬프트 아래에 할당량이 표시됩니다. CI가 Ubuntu에서 이 경로를 검증합니다. 메뉴 막대와 시스템 트레이 App은 계속 macOS와 Windows 전용입니다.
-
-## 첫 실행: 상태 줄 설정
-
-Codex를 사용한 적이 있다면 `usage`가 기록을 자동으로 가져옵니다. Claude Code의 경우 앱 팝오버에서 **"Set Up Status Line"** 버튼을 클릭하여 동기화 hook을 설치하세요.
-그런 다음 해당 도구를 다시 시작하세요(macOS에서는 Claude Code를 Cmd+Q로 완전히 종료한 뒤 다시 열고, Windows에서는 터미널을 다시 시작하거나 새 세션을 시작합니다).
-
-동일한 버튼은 Antigravity CLI와 Grok CLI가 설치되어 있을 때 해당 상태 줄도 함께 설정하며, 설치되어 있지 않으면 아무것도 기록하지 않습니다. 직접 설정해 둔 상태 줄은 먼저 백업되며 스위치를 끌 때 복원됩니다.
-
-설정이 완료되면 Claude Code 창 하단에 다음과 같은 상태 줄이 표시됩니다.
-
-<p align="center">
-  <img src="statusline.ko.gif" alt="Claude Code 상태 줄 표시(한국어)" width="900">
-</p>
-
-## Windows 지원
-
-Windows에서도 핵심 기능을 모두 네이티브로 사용할 수 있습니다. 시스템 트레이 UI, Claude Code 상태 줄 hook, Codex 기록 분석을 지원합니다.[최신 GitHub Release](https://github.com/aqua5230/usage/releases/latest)에서 `usage-windows.zip`을 내려받아 압축을 풀고 `usage.exe`를 실행하면 됩니다. 설치는 필요하지 않습니다. 첫 실행 때 SmartScreen의 **Windows의 PC 보호** 창이 뜨면 **추가 정보** → **실행**을 클릭하세요. 시스템 트레이 UI에는 Microsoft Edge WebView2 Runtime이 필요하며, 보통 Windows 10/11에 이미 포함되어 있습니다.
-
-시스템 트레이 아이콘은 Claude 할당량 비율에 따라 업데이트되고, 도구 설명에는 Claude와 Codex의 각 창 요약이 표시됩니다. 왼쪽 클릭하면 WebView2에서 macOS와 같은 14개 테마 패널(기본과 나머지 13개)을 열고, 오른쪽 클릭 메뉴에는 '패널 위치 재설정'과 '종료'만 있고, 패널 전환, 새로 고침, 로그인 시 실행, 업데이트 확인은 패널 메뉴에 있습니다.
-
-Windows의 차이점: 패널은 트레이 아이콘 옆이 아니라 작업 영역 오른쪽 아래에 열립니다. 업데이트 알림은 시스템 Yes/No 대화 상자를 사용합니다.
-
-### 코드 서명 정책
-
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
-
-팀 역할:
-
-- 커미터 및 리뷰어: [aqua5230](https://github.com/aqua5230)
-- 승인자: [aqua5230](https://github.com/aqua5230)
-
-개인정보 처리방침: 본 프로그램은 사용자나 설치 또는 조작하는 사람의 명시적인 요청이 없는 한, 어떤 정보도 다른 네트워크 시스템으로 전송하지 않습니다. `usage`가 귀하를 대신하여 수행하는 네트워크 호출 및 이를 피하는 방법에 대해서는 [개인정보 보호와 데이터 소스](#개인정보-보호와-데이터-소스)를 참조하세요.
-
-## 테마 갤러리
-
-UI에서 직접 **14가지 시각 테마**를 전환하세요.
-
-<p align="center">
-  <img src="classic.en.png" width="32%" alt="Classic 테마" />
-  <img src="matrix.en.png" width="32%" alt="Matrix 테마" />
-  <img src="win95.en.png" width="32%" alt="Windows 95 테마" />
-  <img src="newspaper.en.png" width="32%" alt="Newspaper 테마" />
-  <img src="cloud_observation.en.png" width="32%" alt="Cloud Observation 테마" />
-  <img src="aquarium.en.png" width="32%" alt="Aquarium 테마" />
-  <img src="prism_arcade.en.png" width="32%" alt="Prism Arcade 테마" />
-  <img src="stained_glass.en.png" width="32%" alt="Stained Glass 테마" />
-  <img src="origami.en.png" width="32%" alt="Origami 테마" />
-  <img src="black_hole.en.png" width="32%" alt="Black Hole 테마" />
-  <img src="lepidoptera.en.png" width="32%" alt="Lepidoptera 테마" />
-  <img src="migration.png" width="32%" alt="철새 이동 테마" />
-  <img src="catppuccin.en.png" width="32%" alt="Catppuccin 테마" />
-</p>
-
-## 문제 해결
-
-메뉴 막대에 `--`가 표시되면 대개 고장이 아니라 아직 로컬 데이터가 없다는 뜻입니다.
-
-| 증상 | 가능한 원인 | 해결 방법 |
-|---------|--------------|-----|
-| 메뉴 막대에 `--` 표시 | 아직 데이터가 없거나 Claude Code hook이 갱신되지 않음 | Codex 대화를 한 번 실행하세요. Claude Code는 "상태 표시줄 설정"을 클릭하세요(소스에서 실행할 때는 `python3 main.py --setup`) |
-| `usage.app` 안의 `main.py` 실행 시 `ImportError` | 번들에 포함된 `main.py`는 앱 내장 인터프리터가 필요해 직접 실행할 수 없음 | 그 파일은 실행하지 마세요. 앱에서 "상태 표시줄 설정"을 클릭하거나, 저장소를 clone해 소스에서 실행하세요 |
-| 실수로 "Quit" 선택 | 프로세스가 종료됨 | Spotlight 또는 Applications에서 `usage.app`을 다시 실행하세요. (`launchctl start com.lollapalooza.usage`는 로그인 시 실행을 켜둔 경우에만 작동합니다.) |
-| 상태에 "N minutes stale" 표시 | Claude Code가 실행 중이 아님 | Claude Code를 열고 실행 상태로 두세요 |
-| Codex 섹션이 비어 있음 | Codex 기록을 찾지 못함 | Codex 대화를 실행하여 로그를 생성하세요 |
-| 오늘 비용이 $0.00으로 표시 | 모델 가격 정보 없음 | `~/.usage/pricing_cache.json`을 삭제하거나 `USAGE_DEBUG=1`을 확인하세요 |
-| Antigravity 카드가 표시되지 않음 | Antigravity CLI가 설치되지 않았거나 로그인되지 않음 | Antigravity CLI를 설치하고 로그인하세요. 백그라운드 할당량 조회가 성공하면 카드가 자동으로 나타납니다 |
-| App이 열리지 않음 | macOS Gatekeeper가 차단함 | macOS 15 이상: 시스템 설정 → 개인정보 보호 및 보안 → 아래로 스크롤 → 그래도 열기. macOS 14 이하: Finder에서 `usage.app`을 마우스 오른쪽 버튼으로 클릭 → 열기 |
-| Windows에 "Windows의 PC 보호"가 표시됨 | SmartScreen이 아직 이 다운로드를 인식하지 못함 | 추가 정보 → 실행 클릭 |
-
-## 비교
-
-| 기능 | usage | ccusage | TokenTracker |
-|---------|:-----:|:-------:|:------------:|
-| 화면에 항상 표시 | ✅ | — | ✅ |
-| macOS 메뉴 막대 및 Windows 시스템 트레이 | ✅ | — | macOS 전용 |
-| Claude Code 및 Codex 사용량 | ✅ | Claude 전용 | ✅ |
-| Antigravity 사용량(Gemini 및 Claude / GPT) | ✅ | — | — |
-| Grok CLI 사용량 | ✅ | — | — |
-| Muse Code 토큰 사용 금액 | ✅ | — | — |
-| Claude Code 및 Codex 서비스 상태 경고 | ✅ | — | — |
-| HTML 심층 보고서 및 UI | ✅ | ✅ | — |
-| AI 업데이트 일보 | ✅ | — | — |
-| 진행 상황 컨시어지 및 Token 절약기 | ✅ | — | — |
-| Token 낭비 상태 점검 | ✅ | — | — |
-| 할당량 조회 시 LLM API 호출 없음 | ✅ | ✅ | ✅ |
-| 오픈 소스 라이선스 | AGPL-3.0 | MIT | — |
-
-## 적합하지 않은 경우
-
-- 항상 터미널에서 작업하며 백그라운드에 메뉴 막대 아이콘을 띄워두고 싶지 않은 경우 — 단일 실행 CLI 도구가 더 적합합니다.
-- Claude Code, Codex, Antigravity를 사용하지 않는 경우 — `usage`가 읽어올 로컬 사용량 데이터가 없기 때문입니다.
-- Linux를 사용하는 경우 — 현재는 macOS와 Windows만 지원합니다.
-
-## 개발
-
-소스에서 빌드, 사용자 지정 에이전트 구성 또는 터미널 TUI 실행 방법은 **[개발 문서](DEVELOPMENT.md)**를 확인하세요.
+상태 줄 hook, HTML 리포트, Antigravity·Grok 카드, 테마, Windows 트레이는 원본과 똑같이 동작합니다. [원본 README](https://github.com/aqua5230/usage#readme)와 [개발 문서](DEVELOPMENT.md)를 참고하세요.
 
 ## 라이선스
 
-AGPL-3.0-only로 라이선스됩니다([LICENSE](../LICENSE) 참고). 수정한 버전을 fork하거나 재배포하는 경우, 원저자를 표기하고 다음 링크를 포함해 주세요.
-https://github.com/aqua5230/usage
+AGPL-3.0-only([LICENSE](../LICENSE) 참고). Copyright © 2026 lollapalooza. 이 fork의 수정 사항도 같은 라이선스로 공개합니다.

@@ -25,7 +25,8 @@ DOC_GROUPS = (
     DocGroup(
         "README",
         "README.md",
-        ("docs/README.zh-TW.md", "docs/README.zh-CN.md", "docs/README.ja.md", "docs/README.ko.md"),
+        # Fork: the README ships in English and Korean only.
+        ("docs/README.ko.md",),
     ),
     DocGroup("CHANGELOG", "CHANGELOG.md", ("docs/CHANGELOG.zh-TW.md",)),
     DocGroup("CONTRIBUTING", ".github/CONTRIBUTING.md", (".github/CONTRIBUTING.zh-TW.md",)),

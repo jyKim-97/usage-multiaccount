@@ -13,4 +13,4 @@
 
 有裝 `usage-cli` 指令（`uv tool install usage-cli`）就直接用它；沒有的話改用 `uvx` 執行 usage-cli，需要先裝 [uv](https://docs.astral.sh/uv/)。
 
-macOS 選單列 App 請見[主 README](../docs/README.zh-TW.md)。
+macOS 選單列 App 請見[主 README](../README.md)。
