@@ -124,6 +124,13 @@
         const key = node.dataset.i18n;
         if (key) node.textContent = t(key);
       });
+      // Icon-only controls keep their name as a tooltip and accessible label.
+      document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+        const key = node.dataset.i18nTitle;
+        if (!key) return;
+        node.title = t(key);
+        node.setAttribute("aria-label", t(key));
+      });
       const rangeButton = document.querySelector('[data-action="toggle-project-range"]');
       if (rangeButton) rangeButton.textContent = projectRangeLabel(projectRange);
     }

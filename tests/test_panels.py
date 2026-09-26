@@ -101,7 +101,7 @@ def test_registered_panel_i18n_keys() -> None:
 def test_classic_panel_preferred_size() -> None:
     panel = panels.get_panel("classic")
 
-    assert panel.preferred_size() == (300.0, 630.0)
+    assert panel.preferred_size() == (300.0, 625.0)
 
 
 def test_catppuccin_panel_preferred_size() -> None:

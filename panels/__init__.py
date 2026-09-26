@@ -27,7 +27,7 @@ def all_panels() -> tuple[Panel, ...]:
             "classic.html",
             # Compact skin (fork): narrower and shorter than the upstream 364x1132.
             width=300.0,
-            height=630.0,
+            height=625.0,
             claude_card_height=103.0,
             codex_card_height=103.0,
             agy_card_height=103.0,

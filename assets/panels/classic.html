@@ -1004,21 +1004,25 @@
       height: 2px;
     }
 
-    /* Footer: today's total, then status text and borderless actions on one
-       line, like a native popover's caption row. */
+    /* Footer: today's total with icon-only Refresh / Quit on its right, the
+       status text on its own caption line below. Language-independent: no
+       row ever wraps, whatever the length of the translated labels. */
     .footer {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "alerts alerts"
+        "today actions"
+        "meta meta";
       align-items: center;
       column-gap: 8px;
-      row-gap: 4px;
+      row-gap: 3px;
       min-height: 0;
       padding: 10px 0 2px;
     }
 
     [data-footer="service-alerts"] {
-      grid-column: 1 / -1;
-      grid-row: 1;
+      grid-area: alerts;
     }
 
     .service-alert {
@@ -1031,8 +1035,7 @@
     }
 
     .today {
-      grid-column: 1 / -1;
-      grid-row: 2;
+      grid-area: today;
       margin-top: 0;
       padding-top: 0;
       border-top: 0;
@@ -1043,8 +1046,7 @@
     }
 
     .meta {
-      grid-column: 1;
-      grid-row: 3;
+      grid-area: meta;
       flex-wrap: nowrap;
       gap: 0;
       min-width: 0;
@@ -1067,8 +1069,7 @@
     }
 
     .actions {
-      grid-column: 2;
-      grid-row: 3;
+      grid-area: actions;
       gap: 2px;
       margin-top: 0;
     }
@@ -1092,6 +1093,28 @@
 
     .action.primary {
       color: var(--codex);
+    }
+
+    /* The i18n label stays in the DOM for screen readers; only the glyph shows. */
+    .action[data-action="refresh"],
+    .action[data-action="quit"] {
+      width: 22px;
+      padding: 0;
+      font-size: 0;
+    }
+
+    .action[data-action="refresh"]::before,
+    .action[data-action="quit"]::before {
+      font-size: 13px;
+      line-height: 20px;
+    }
+
+    .action[data-action="refresh"]::before {
+      content: "↻";
+    }
+
+    .action[data-action="quit"]::before {
+      content: "⏻";
     }
 
     .action:hover,
@@ -1190,8 +1213,8 @@
       <div class="today" data-footer="today">Today: $0.00 (0 tokens)</div>
 
       <div class="actions">
-        <button class="action primary" data-action="refresh" data-i18n="refresh_now">↻ Refresh Now</button>
-        <button class="action" data-action="quit" data-i18n="quit">⏻ Quit</button>
+        <button class="action primary" data-action="refresh" data-i18n="refresh_now" data-i18n-title="refresh_now">↻ Refresh Now</button>
+        <button class="action" data-action="quit" data-i18n="quit" data-i18n-title="quit">⏻ Quit</button>
         <button class="action" data-action="install" data-i18n="install_hook">Install Hook</button>
       </div>
     </section>
