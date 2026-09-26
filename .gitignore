@@ -2,7 +2,10 @@
 __pycache__/
 .mypy_cache/
 .ruff_cache/
-.claude/settings.local.json
+# Local agent configuration and generated skill metadata
+/.agents/
+/.claude/
+/skills-lock.json
 *.log
 pricing_cache.json
 # Runtime cache the app writes when run from source (cache/projects.json)
