@@ -155,6 +155,10 @@
       if (!el) return;
       el.hidden = card === "codex" && !row;
       if (el.hidden) return;
+      fillRow(el, key, row);
+    }
+
+    function fillRow(el, key, row) {
       const cardEl = el.closest(".card");
       if (!cardEl) return;
       const data = row || {
@@ -245,6 +249,44 @@
       el.textContent = credits.unlimited
         ? t("codex_credits_unlimited")
         : t("codex_credits", { balance: credits.balance || "--" });
+    }
+
+    // Only panels that ship a [data-codex-accounts] slot render OpenCodex
+    // accounts; with accounts present the card's own rows are hidden, because
+    // they mirror whichever account Codex used last.
+    function renderCodexAccounts(accounts) {
+      const card = document.querySelector('[data-card="codex"]');
+      const slot = card && card.querySelector("[data-codex-accounts]");
+      if (!slot) return;
+      const list = Array.isArray(accounts) ? accounts : [];
+      card.dataset.hasAccounts = list.length ? "true" : "false";
+      slot.replaceChildren();
+      list.forEach((account) => {
+        const section = document.createElement("div");
+        section.className = "codex-account";
+        section.dataset.active = account.active ? "true" : "false";
+        const head = document.createElement("div");
+        head.className = "codex-account-head";
+        const name = document.createElement("span");
+        name.className = "codex-account-name";
+        name.textContent = account.label || "--";
+        head.appendChild(name);
+        if (account.stale && account.stale.ageText) {
+          const age = document.createElement("span");
+          age.className = "codex-account-stale";
+          age.textContent = `⚠ ${account.stale.ageText}`;
+          head.appendChild(age);
+        }
+        section.appendChild(head);
+        // fillRow reads the enclosing card's styles, so attach before filling.
+        slot.appendChild(section);
+        (account.rows || []).forEach((row) => {
+          const rowEl = document.createElement("div");
+          rowEl.className = "row";
+          section.appendChild(rowEl);
+          fillRow(rowEl, "session", row);
+        });
+      });
     }
 
     function renderAgy(agy) {
@@ -397,6 +439,7 @@
       applyCard("codex", state.codex);
       renderCodexStale(state.codex && state.codex.stale);
       renderCodexCredits(state.codex && state.codex.credits);
+      renderCodexAccounts(state.codexAccounts);
       renderAgy(state.agy);
       renderGrok(state.grok);
       renderHistoryLoadError(state.historyError);

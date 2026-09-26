@@ -36,6 +36,7 @@ from usage_client import PollOutcome, PollState
 from usage_common.time_utils import parse_iso8601_utc_or_raise
 
 if TYPE_CHECKING:
+    from menubar.codex_accounts import CodexAccountState
     from panels.base import Panel as UsagePanel
 
 FILE_EVENT_REFRESH_MIN_INTERVAL_S = 30.0
@@ -156,6 +157,8 @@ class PopoverState:
     grok_stale: GrokStaleState | None = None
     card_order: tuple[str, ...] = ("claude", "codex", "agy", "grok")
     history_error: HistoryLoadErrorState | None = None
+    # Empty unless OpenCodex keeps a per-account quota cache.
+    codex_accounts: tuple[CodexAccountState, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

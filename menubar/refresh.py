@@ -21,6 +21,7 @@ import quota.codex_window_keeper as codex_window_keeper
 import quota.window_keeper as window_keeper
 from loaders.history_loader import UsageEntry
 from menubar import agy as menubar_agy
+from menubar import codex_accounts as menubar_codex_accounts
 from menubar import grok as menubar_grok
 from menubar import state as menubar_state
 from menubar.prefs import (
@@ -261,6 +262,9 @@ def build_result(app: _RefreshApp, sources: RefreshSources) -> dict[str, Any]:
         state.hide_grok = hide_grok
         state.card_order = card_order
 
+    state.codex_accounts = menubar_codex_accounts.codex_account_states(
+        mock=app.mock, language=app.language
+    )
     return {
         "state": state,
         "codex_5h_pct": codex_5h_pct,

@@ -53,6 +53,18 @@ def _isolate_claude_config(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> I
 
 
 @pytest.fixture(autouse=True)
+def _isolate_ocx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Keep refreshes out of the real ~/.opencodex and never spawn the ocx CLI."""
+    from loaders import ocx_quota_loader
+
+    monkeypatch.setattr(ocx_quota_loader, "OCX_HOME", tmp_path / "opencodex")
+    monkeypatch.setattr(ocx_quota_loader, "_fetch_account_list", lambda: None)
+    monkeypatch.setattr(ocx_quota_loader, "_label_cache", {})
+    monkeypatch.setattr(ocx_quota_loader, "_label_order", ())
+    monkeypatch.setattr(ocx_quota_loader, "_label_checked_at", None)
+
+
+@pytest.fixture(autouse=True)
 def _isolate_muse_sessions(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Keep detectors and history scans out of real Muse journals."""
     from loaders import muse_loader

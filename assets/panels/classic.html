@@ -230,6 +230,43 @@
       display: none;
     }
 
+    .card[data-card="codex"][data-has-accounts="true"] > [data-row] {
+      display: none;
+    }
+
+    .codex-account + .codex-account {
+      border-top: 1px solid var(--line);
+      margin-top: 10px;
+      padding-top: 8px;
+    }
+
+    .codex-account-head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .codex-account[data-active="true"] .codex-account-name {
+      color: var(--accent);
+    }
+
+    .codex-account[data-active="true"] .codex-account-name::before {
+      content: "● ";
+    }
+
+    .codex-account-stale {
+      margin-left: auto;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 700;
+    }
+
     .codex-credits {
       margin-top: 8px;
       color: var(--muted);
@@ -757,6 +794,7 @@
       </header>
       <div class="row" data-row="session"></div>
       <div class="row" data-row="weekly"></div>
+      <div class="codex-accounts" data-codex-accounts></div>
     </section>
 
     <section class="card" data-card="agy" style="--accent: var(--agy)">

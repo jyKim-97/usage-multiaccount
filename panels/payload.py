@@ -145,6 +145,16 @@ def _state_payload(
             "groupName": state.agy_group_name,
             "stale": state.agy_stale,
         },
+        "codexAccounts": [
+            {
+                "label": account.label,
+                "plan": account.plan,
+                "active": account.active,
+                "rows": [_row_payload(row) for row in account.rows],
+                "stale": account.stale,
+            }
+            for account in state.codex_accounts
+        ],
         "grok": {
             "weekly": _row_payload(state.grok_weekly),
             "stale": state.grok_stale,
