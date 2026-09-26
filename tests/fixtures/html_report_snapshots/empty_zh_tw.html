@@ -21,7 +21,10 @@ applyReportTheme();
 /* Hallmark · macrostructure: Stat-led report · brand: usage (preserved)
  * pre-emit critique: P5 H4 E4 S5 R5 V4 */
 :root{
-  --font-mono:ui-monospace,SFMono-Regular,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","PingFang TC","Helvetica Neue",system-ui,sans-serif;
+  /* Fork: data labels use the system face too (with tabular figures), so the
+     report reads in the same type as the menu-bar panel. */
+  --font-mono:var(--font-sans);
   --bg:#09090b;
   --bg-gradient-1:rgba(224,154,88,.055);
   --bg-gradient-2:rgba(90,191,160,.12);
@@ -124,7 +127,8 @@ body{
   margin:0;
   background-color:var(--bg);
   color:var(--text);
-  font-family:"Styrene A","Styrene B","Helvetica Neue","PingFang TC","Noto Sans TC",system-ui,sans-serif;
+  font-family:var(--font-sans);
+  font-variant-numeric:tabular-nums;
   line-height:1.55;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;

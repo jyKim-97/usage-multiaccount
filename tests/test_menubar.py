@@ -2112,7 +2112,7 @@ def test_project_rows_top3(monkeypatch: pytest.MonkeyPatch) -> None:
             cache_creation_tokens=0,
             cache_read_tokens=0,
             cost_usd=1.0,
-            project="FinMind",
+            project="mobile-client",
         ),
         history_loader.UsageEntry(
             timestamp=now,
@@ -2125,7 +2125,7 @@ def test_project_rows_top3(monkeypatch: pytest.MonkeyPatch) -> None:
             cache_creation_tokens=0,
             cache_read_tokens=0,
             cost_usd=0.5,
-            project="AI客服",
+            project="data-pipeline",
         ),
         history_loader.UsageEntry(
             timestamp=now,
@@ -2161,8 +2161,8 @@ def test_project_rows_top3(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert len(rows) == 3
     assert rows[0] == ("usage", 5_000_000, 2.0)
-    assert rows[1][0] == "FinMind"
-    assert rows[2][0] == "AI客服"
+    assert rows[1][0] == "mobile-client"
+    assert rows[2][0] == "data-pipeline"
 
 
 def test_project_rows_today_uses_calendar_day() -> None:

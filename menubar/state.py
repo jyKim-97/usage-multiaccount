@@ -457,26 +457,26 @@ def app_project_rows(
     if app.mock:
         if hours_back <= 0:
             return [
-                ("usage", 624_000_000, 361.00),
-                ("FinMind", 172_800_000, 100.24),
-                ("AI客服", 44_000_000, 26.40),
+                ("aurora-api", 624_000_000, 361.00),
+                ("mobile-client", 172_800_000, 100.24),
+                ("data-pipeline", 44_000_000, 26.40),
             ]
         if hours_back <= 24:
             return [
-                ("usage", 11_200_000, 6.47),
-                ("FinMind", 3_100_000, 1.82),
-                ("AI客服", 800_000, 0.48),
+                ("aurora-api", 11_200_000, 6.47),
+                ("mobile-client", 3_100_000, 1.82),
+                ("data-pipeline", 800_000, 0.48),
             ]
         if hours_back <= 168:
             return [
-                ("usage", 78_400_000, 45.20),
-                ("FinMind", 21_700_000, 12.74),
-                ("AI客服", 5_600_000, 3.36),
+                ("aurora-api", 78_400_000, 45.20),
+                ("mobile-client", 21_700_000, 12.74),
+                ("data-pipeline", 5_600_000, 3.36),
             ]
         return [
-            ("usage", 312_000_000, 180.50),
-            ("FinMind", 86_400_000, 50.12),
-            ("AI客服", 22_000_000, 13.20),
+            ("aurora-api", 312_000_000, 180.50),
+            ("mobile-client", 86_400_000, 50.12),
+            ("data-pipeline", 22_000_000, 13.20),
         ]
 
     if entries is None:
