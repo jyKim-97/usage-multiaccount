@@ -372,16 +372,14 @@ class ClaudeUsageClient:
         return self._with_api_quota(await self._fetch_local())
 
     def _with_api_quota(self, outcome: PollOutcome) -> PollOutcome:
-        # Fork: the statusLine hook only sees Claude Code running on this
-        # machine. The OAuth usage endpoint reports the account-wide quota, so
-        # it takes over whenever it is newer than the local snapshot.
-        local = outcome.snapshot if outcome.state == PollState.SUCCESS else None
-        local_polled_at = local.polled_at if local is not None else None
+        # The statusLine hook only sees Claude Code running on this machine.
+        # Prefer the account-wide OAuth snapshot whenever it is available;
+        # local data remains the fallback when the endpoint can't be reached.
         try:
-            api = claude_usage_api.latest_quota(local_polled_at=local_polled_at)
+            api = claude_usage_api.latest_quota()
         except Exception:
             return outcome
-        if api is None or (local_polled_at is not None and api.fetched_at <= local_polled_at):
+        if api is None:
             return outcome
         now = time.time()
         five_reset = api.five_hour_resets_at or 0.0

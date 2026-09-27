@@ -20,6 +20,23 @@ def test_quota_notification_thresholds_filters_invalid_values() -> None:
     assert menubar_prefs._quota_notification_thresholds(prefs) == [95.0, 50.5]
 
 
+def test_quota_sync_interval_defaults_and_validates() -> None:
+    assert menubar_prefs._quota_sync_interval({}) == 60
+    assert menubar_prefs._quota_sync_interval({"quota_sync_interval_seconds": 120}) == 120
+    for value in (30, 3601, 60.0, True, "300", None):
+        assert menubar_prefs._quota_sync_interval({"quota_sync_interval_seconds": value}) == 60
+
+
+def test_quota_sync_interval_round_trip(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    preferences_file = tmp_path / "usage-preferences.json"
+    monkeypatch.setattr(prefs, "PREFERENCES_FILE", preferences_file)
+
+    assert menubar_prefs._save_quota_sync_interval(300) is True
+    assert menubar_prefs._quota_sync_interval() == 300
+    assert menubar_prefs._save_quota_sync_interval(30) is False
+    assert menubar_prefs._quota_sync_interval() == 300
+
+
 def test_auto_update_check_enabled_defaults_true() -> None:
     assert menubar_prefs._auto_update_check_enabled({}) is True
     assert menubar_prefs._auto_update_check_enabled({"auto_update_check": False}) is False

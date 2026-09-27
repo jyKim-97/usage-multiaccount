@@ -694,8 +694,7 @@ def test_switch_panel_menu_contains_update_items(monkeypatch: pytest.MonkeyPatch
     _FakeMenu.instances = []
     menubar.AppDelegate.switchPanel_(delegate, object())
 
-    # Three menus are built: the main popup, the panel-themes submenu, and the
-    # provider-visibility submenu.
+    # Three menus are built: the main popup and its two submenus.
     main_menu, panel_submenu, hide_submenu = (
         _FakeMenu.instances[0],
         _FakeMenu.instances[1],
@@ -706,6 +705,7 @@ def test_switch_panel_menu_contains_update_items(monkeypatch: pytest.MonkeyPatch
     # The auto-update row is gone — update checks just stay on by default.
     assert "Automatically Check for Updates" not in main_titles
     assert "Usage Alert Notifications" in main_titles
+    assert "Quota Sync Interval… (60 sec)" in main_titles
     daily_item = next(item for item in main_menu.items if item.title == "AI Update Daily")
     assert daily_item.action == "toggleAiDaily:"
     assert daily_item.representedObject() is None
@@ -852,6 +852,18 @@ def test_popover_stays_open_if_it_regains_key_focus() -> None:
     delegate.popover = popover
 
     delegate.closePopoverAfterFocusLoss_(None)
+
+
+def test_hidden_panel_keeps_default_minute_refresh_cadence() -> None:
+    intervals: list[float] = []
+    delegate = SimpleNamespace(
+        interval=60,
+        _reschedule_poll_timer=lambda interval: intervals.append(interval),
+    )
+
+    menubar.AppDelegate._panel_window_did_hide(cast(Any, delegate))
+
+    assert intervals == [60.0]
 
 
 def test_auto_update_disabled_skips_background_check(monkeypatch: pytest.MonkeyPatch) -> None:

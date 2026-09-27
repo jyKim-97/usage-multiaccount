@@ -160,7 +160,9 @@ def test_expired_token_is_never_used(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     assert claude_usage_api._access_token(NOW) == "t"
 
 
-def test_poll_skipped_while_local_hook_is_fresh(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_poll_runs_every_minute_even_when_local_hook_is_fresh(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     calls: list[int] = []
 
     def poll() -> tuple[None, None, None]:
@@ -168,15 +170,17 @@ def test_poll_skipped_while_local_hook_is_fresh(monkeypatch: pytest.MonkeyPatch)
         return None, None, None
 
     monkeypatch.setattr(claude_usage_api, "_poll", poll)
-    claude_usage_api.latest_quota(local_polled_at=NOW - 30, now=NOW)
-    assert calls == []
-    claude_usage_api.latest_quota(local_polled_at=NOW - 3600, now=NOW)
+    claude_usage_api.latest_quota(now=NOW)
     assert calls == [1]
+    claude_usage_api.latest_quota(now=NOW + 59)
+    assert calls == [1]
+    claude_usage_api.latest_quota(now=NOW + 60)
+    assert calls == [1, 1]
 
 
 def test_429_waits_out_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(claude_usage_api, "_poll", lambda: (429, None, 1800.0))
-    claude_usage_api.latest_quota(local_polled_at=None, now=NOW)
+    claude_usage_api.latest_quota(now=NOW)
     assert claude_usage_api._next_poll_at == NOW + 1800.0
 
 
@@ -188,6 +192,41 @@ def test_newer_api_snapshot_replaces_missing_hook(monkeypatch: pytest.MonkeyPatc
     missing = usage_client.PollOutcome(state=usage_client.PollState.TOKEN_ERROR)
     monkeypatch.setattr(client, "_fetch_local", lambda: asyncio.sleep(0, result=missing))
     outcome = asyncio.run(client.fetch_once())
+    assert outcome.snapshot is not None
+    assert outcome.snapshot.current_percent == 42
+    assert outcome.snapshot.data_source == usage_client.API_DATA_SOURCE
+
+
+def test_account_wide_api_snapshot_takes_priority_over_newer_local_hook(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = time.time()
+    quota = claude_usage_api.ClaudeApiQuota(
+        42.0,
+        now + 3600,
+        7.0,
+        now + 86400,
+        now - 10,
+    )
+    local = usage_client.UsageSnapshot(
+        current_percent=5,
+        current_reset_at=now + 3600,
+        weekly_percent=1,
+        weekly_reset_at=now + 86400,
+        current_status="",
+        polled_at=now,
+        data_source="hook",
+    )
+    monkeypatch.setattr(claude_usage_api, "latest_quota", lambda: quota)
+    client = usage_client.ClaudeUsageClient(interval_seconds=60, mock=False)
+    local_outcome = usage_client.PollOutcome(
+        state=usage_client.PollState.SUCCESS,
+        snapshot=local,
+    )
+    monkeypatch.setattr(client, "_fetch_local", lambda: asyncio.sleep(0, result=local_outcome))
+
+    outcome = asyncio.run(client.fetch_once())
+
     assert outcome.snapshot is not None
     assert outcome.snapshot.current_percent == 42
     assert outcome.snapshot.data_source == usage_client.API_DATA_SOURCE

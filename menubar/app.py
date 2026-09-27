@@ -76,12 +76,7 @@ from menubar import refresh as menubar_refresh
 from menubar import state as menubar_state
 from menubar import title as menubar_title
 from menubar import update as menubar_update
-from menubar.actions import (
-    show_forwarder_mode_prompt_if_needed as show_forwarder_mode_prompt_if_needed,
-)
-from menubar.chrome import (
-    _make_alert,
-)
+from menubar.chrome import _make_alert
 from menubar.popover import PopoverViewController, _popover_size
 from menubar.prefs import (
     _auto_update_check_enabled,
@@ -192,13 +187,12 @@ __all__ = [
 ]
 
 UPDATE_ALERT_BODY_LIMIT = 2000
-SLOW_POLL_INTERVAL_S = 300.0
 
 logger = logging.getLogger(__name__)
 
 
-def _detect_language() -> str:
-    return detect_lang()
+_detect_language = detect_lang
+show_forwarder_mode_prompt_if_needed = menubar_actions.show_forwarder_mode_prompt_if_needed
 
 
 def _session_resume_enabled() -> bool:
@@ -286,7 +280,7 @@ class AppDelegate(NSObject):
         if self is None:
             return None
         self.mock = mock
-        self.interval = max(30, interval)
+        self.interval = menubar_actions.quota_sync_interval()
         self.timer = None
         self.timer_interval = 0.0
         self.tracker = UsageRateTracker(mock=mock)
@@ -347,7 +341,9 @@ class AppDelegate(NSObject):
 
         self._request_notification_authorization()
         self._refresh()
-        self._reschedule_poll_timer(max(self.interval, SLOW_POLL_INTERVAL_S))
+        if self.mock:
+            self.performSelector_withObject_afterDelay_("togglePopover:", None, 0.2)
+        self._reschedule_poll_timer(max(self.interval, 60.0))
         self._fs_stream = setup_fsevents(self)
         self._history_source_tracker.set_incremental_enabled(self._fs_stream is not None)
         warm_up_pricing(self._refresh_after_pricing_warm_up)
@@ -407,7 +403,7 @@ class AppDelegate(NSObject):
         self.refreshNow_(None)
 
     def _panel_window_did_hide(self) -> None:
-        self._reschedule_poll_timer(max(self.interval, SLOW_POLL_INTERVAL_S))
+        self._reschedule_poll_timer(max(self.interval, 60.0))
 
     def windowDidMove_(self, notification: Any) -> None:
         if notification.object() is self.popover and self._panel_window_is_visible():
@@ -485,6 +481,9 @@ class AppDelegate(NSObject):
         self._mark_switch_menu_action()
         panel_id = str(sender.representedObject())
         self._set_active_panel_id(panel_id)
+
+    def selectQuotaSyncInterval_(self, sender: Any) -> None:
+        menubar_actions.select_quota_sync_interval(self, sender)
 
     def toggleAiDaily_(self, sender: Any) -> None:
         self._mark_switch_menu_action()
@@ -744,6 +743,7 @@ class AppDelegate(NSObject):
 
     def windowDidResignKey_(self, _notification: Any) -> None:
         self.performSelector_withObject_afterDelay_("closePopoverAfterFocusLoss:", None, 0.0)
+
     def closePopoverAfterFocusLoss_(self, _sender: Any) -> None:
         if self._panel_window_is_visible() and not bool(self.popover.isKeyWindow()):
             self.popover.close()

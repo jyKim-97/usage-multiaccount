@@ -18,12 +18,14 @@ from menubar.prefs import (
     _hide_codex_enabled,
     _hide_grok_enabled,
     _quota_notifications_enabled,
+    _quota_sync_interval,
     _window_keeper_enabled,
 )
 
 
 class _SwitchMenuApp(Protocol):
     language: str
+    interval: int
     active_panel: Any
     _switch_menu_action_taken: bool
 
@@ -135,6 +137,14 @@ def build_switch_menu(app: _SwitchMenuApp, sender: Any) -> None:
             state=login_item.is_enabled(),
         )
     )
+    selected_interval = _quota_sync_interval()
+    sync_item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+        _t(app.language, "quota_sync_interval_menu", seconds=selected_interval),
+        "selectQuotaSyncInterval:",
+        "",
+    )
+    sync_item.setTarget_(app)
+    menu.addItem_(sync_item)
     menu.addItem_(
         build_menu_item(
             app.language,

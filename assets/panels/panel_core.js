@@ -133,6 +133,8 @@
       });
       const rangeButton = document.querySelector('[data-action="toggle-project-range"]');
       if (rangeButton) rangeButton.textContent = projectRangeLabel(projectRange);
+      const settingsButton = document.querySelector('[data-action="switch"]');
+      if (settingsButton) settingsButton.textContent = t("settings_menu");
     }
 
     window.usageSetLanguage = function usageSetLanguage(language) {

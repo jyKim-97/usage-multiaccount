@@ -14,6 +14,8 @@ import logging
 import os
 from typing import Any, Protocol
 
+from AppKit import NSMakeRect, NSTextField
+
 from i18n import _t
 from installer import session_hooks, setup_hook
 from installer.statusline_settings import (
@@ -23,6 +25,11 @@ from installer.statusline_settings import (
     _toggle_statusline_settings,
 )
 from menubar.chrome import _make_alert
+from menubar.prefs import (
+    _quota_sync_interval,
+    _save_quota_sync_interval,
+    _valid_quota_sync_interval,
+)
 from usage_common.usage_lang import detect_lang
 
 logger = logging.getLogger(__name__)
@@ -34,6 +41,38 @@ class _ActionApp(Protocol):
     def performSelectorOnMainThread_withObject_waitUntilDone_(
         self, selector: str, obj: Any, wait: bool
     ) -> None: ...
+
+
+def quota_sync_interval() -> int:
+    return _quota_sync_interval()
+
+
+def apply_quota_sync_interval(app: Any, value: object) -> bool:
+    interval = _valid_quota_sync_interval(value)
+    if interval is None or not _save_quota_sync_interval(interval):
+        return False
+    app.interval = interval
+    app._reschedule_poll_timer(float(interval))
+    return True
+
+
+def select_quota_sync_interval(app: Any, sender: Any) -> None:
+    app._mark_switch_menu_action()
+    alert = _make_alert()
+    alert.setMessageText_(_t(app.language, "quota_sync_interval_title"))
+    alert.setInformativeText_(_t(app.language, "quota_sync_interval_body"))
+    alert.addButtonWithTitle_(_t(app.language, "quota_sync_interval_save"))
+    alert.addButtonWithTitle_(_t(app.language, "quota_sync_interval_cancel"))
+    field = NSTextField.alloc().initWithFrame_(NSMakeRect(0, 0, 240, 24))
+    field.setStringValue_(str(app.interval))
+    alert.setAccessoryView_(field)
+    if int(alert.runModal()) != 1000:
+        return
+    try:
+        value = int(str(field.stringValue()).strip())
+    except ValueError:
+        return
+    apply_quota_sync_interval(app, value)
 
 
 def toggle_session_resume_in_background(app: _ActionApp) -> None:

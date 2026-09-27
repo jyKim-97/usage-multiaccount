@@ -12,9 +12,8 @@ used as-is. This module never refreshes or writes it back: rotating the
 refresh token here would sign Claude Code out. An expired token just means no
 API snapshot until Claude Code refreshes it.
 
-Anthropic rate-limits the endpoint aggressively, so calls are spaced by
-POLL_INTERVAL_SECONDS, skipped while the local hook file is fresh, and a 429
-waits out Retry-After (at least doubling the interval, capped at an hour).
+Calls are spaced by POLL_INTERVAL_SECONDS, and a 429 waits out Retry-After
+(at least doubling the interval, capped at an hour).
 """
 
 from __future__ import annotations
@@ -38,7 +37,7 @@ logger = logging.getLogger(__name__)
 USAGE_URL = "https://api.anthropic.com/api/oauth/usage"
 KEYCHAIN_SERVICE = "Claude Code-credentials"
 CREDENTIALS_FILE = Path(os.path.expanduser("~/.claude/.credentials.json"))
-POLL_INTERVAL_SECONDS = 600.0
+POLL_INTERVAL_SECONDS = 60.0
 MAX_BACKOFF_SECONDS = 3600.0
 REQUEST_TIMEOUT_SECONDS = 8.0
 TOKEN_EXPIRY_MARGIN_SECONDS = 60.0
@@ -59,15 +58,12 @@ _next_poll_at = 0.0
 _backoff = POLL_INTERVAL_SECONDS
 
 
-def latest_quota(
-    *, local_polled_at: float | None, now: float | None = None
-) -> ClaudeApiQuota | None:
-    """Cached API snapshot, polling first when due and the local hook is stale."""
+def latest_quota(*, now: float | None = None) -> ClaudeApiQuota | None:
+    """Return the cached API snapshot, polling first when the interval is due."""
     global _cached, _next_poll_at, _backoff
     current = time.time() if now is None else now
-    local_fresh = local_polled_at is not None and current - local_polled_at < POLL_INTERVAL_SECONDS
     with _lock:
-        if not local_fresh and current >= _next_poll_at:
+        if current >= _next_poll_at:
             status, quota, retry_after = _poll()
             if quota is not None:
                 _cached = quota

@@ -14,6 +14,9 @@ DEFAULT_QUOTA_CARD_ORDER = ("claude", "codex", "agy", "grok")
 DEFAULT_PANEL_FLAVOR = "mocha"
 PANEL_FLAVORS = ("latte", "frappe", "macchiato", "mocha")
 AGY_QUOTA_GROUPS = ("gemini", "claude_gpt")
+DEFAULT_QUOTA_SYNC_INTERVAL = 60
+MIN_QUOTA_SYNC_INTERVAL = 60
+MAX_QUOTA_SYNC_INTERVAL = 3600
 
 
 def _resolved_preferences(prefs: Mapping[str, object] | None = None) -> Mapping[str, object]:
@@ -119,6 +122,28 @@ def _valid_quota_card_order(value: object) -> tuple[str, ...] | None:
 def _quota_notifications_enabled(prefs: Mapping[str, object] | None = None) -> bool:
     data = _resolved_preferences(prefs)
     return data.get("quota_notifications") is not False
+
+
+def _quota_sync_interval(prefs: Mapping[str, object] | None = None) -> int:
+    data = _resolved_preferences(prefs)
+    interval = _valid_quota_sync_interval(data.get("quota_sync_interval_seconds"))
+    return DEFAULT_QUOTA_SYNC_INTERVAL if interval is None else interval
+
+
+def _save_quota_sync_interval(value: object) -> bool:
+    interval = _valid_quota_sync_interval(value)
+    if interval is None:
+        return False
+    prefs = _load_preferences()
+    prefs["quota_sync_interval_seconds"] = interval
+    _save_preferences(prefs)
+    return True
+
+
+def _valid_quota_sync_interval(value: object) -> int | None:
+    if type(value) is not int or not MIN_QUOTA_SYNC_INTERVAL <= value <= MAX_QUOTA_SYNC_INTERVAL:
+        return None
+    return value
 
 
 def _window_keeper_enabled(prefs: Mapping[str, object] | None = None) -> bool:
