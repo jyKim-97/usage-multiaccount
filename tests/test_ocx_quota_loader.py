@@ -154,13 +154,11 @@ def test_account_list_carries_masked_email() -> None:
     assert parsed[0]["a"].email == "j***g@example.com"
 
 
-def test_active_account_percent_prefers_active_shortest_window() -> None:
+def test_account_percents_include_inactive_accounts_in_registered_order() -> None:
     plus, free = codex_accounts.codex_account_states(mock=True, language="en")
-    assert codex_accounts.active_account_percent((plus, free)) == 55.0  # plus is active in mock
+    assert codex_accounts.account_percents((plus, free)) == (55.0, 12.0)
     inactive = tuple(replace(account, active=False) for account in (plus, free))
-    assert codex_accounts.active_account_percent(inactive) is None
-    free_active = (replace(plus, active=False), replace(free, active=True))
-    assert codex_accounts.active_account_percent(free_active) == 12.0  # monthly-only plan
+    assert codex_accounts.account_percents(inactive) == (55.0, 12.0)
 
 
 def test_fsevents_keeps_only_the_quota_cache_from_ocx() -> None:

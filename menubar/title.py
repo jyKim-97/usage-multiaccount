@@ -25,7 +25,7 @@ from menubar.chrome import (
     _grok_menubar_icon,
     _menubar_icon_attachment_string,
 )
-from menubar.codex_accounts import active_account_percent
+from menubar.codex_accounts import account_percents
 from menubar.state import PopoverState, _format_percent
 
 
@@ -62,13 +62,13 @@ def _menubar_text_string(app: _TitleApp, text: str) -> Any:
     return attributed
 
 
-def _codex_title_pct(app: _TitleApp, state: PopoverState) -> float | None:
-    # The OpenCodex account now routing requests beats Codex's own session
-    # logs, which stop updating when requests go through the ocx proxy.
-    active = active_account_percent(state.codex_accounts)
-    if active is not None:
-        return active
-    return None if app.codex_5h_pct is None else float(app.codex_5h_pct)
+def _codex_title_percents(app: _TitleApp, state: PopoverState) -> tuple[float, ...]:
+    # Show every OpenCodex login because its active marker can lag behind the
+    # proxy. Keep Codex's own session value as the no-account fallback.
+    percents = account_percents(state.codex_accounts)
+    if percents:
+        return percents
+    return () if app.codex_5h_pct is None else (float(app.codex_5h_pct),)
 
 
 def _menubar_attributed_title(app: _TitleApp, state: PopoverState) -> Any:
@@ -81,9 +81,9 @@ def _menubar_attributed_title(app: _TitleApp, state: PopoverState) -> Any:
         )
         title.appendAttributedString_(_menubar_icon_attachment_string(_claude_menubar_icon()))
         title.appendAttributedString_(_menubar_text_string(app, f" {claude_percent}"))
-    codex_pct = _codex_title_pct(app, state)
-    if not state.hide_codex and (codex_pct is not None or state.hide_claude):
-        codex_percent = "--" if codex_pct is None else f"{_format_percent(codex_pct)}%"
+    codex_pcts = _codex_title_percents(app, state)
+    if not state.hide_codex and (codex_pcts or state.hide_claude):
+        codex_percent = " · ".join(f"{_format_percent(value)}%" for value in codex_pcts) or "--"
         if not state.hide_claude:
             title.appendAttributedString_(_menubar_text_string(app, "  "))
         title.appendAttributedString_(_menubar_icon_attachment_string(_codex_menubar_icon()))
@@ -136,9 +136,9 @@ def _compose_title(app: _TitleApp, state: PopoverState) -> str:
             else f"{_format_percent(state.claude_session.percent)}%"
         )
         parts.append(claude)
-    codex_pct = _codex_title_pct(app, state)
-    if not state.hide_codex and (codex_pct is not None or state.hide_claude):
-        codex = "--" if codex_pct is None else f"{_format_percent(codex_pct)}%"
+    codex_pcts = _codex_title_percents(app, state)
+    if not state.hide_codex and (codex_pcts or state.hide_claude):
+        codex = " · ".join(f"{_format_percent(value)}%" for value in codex_pcts) or "--"
         parts.append(codex)
     if not state.hide_agy and state.agy_session.percent is not None:
         agy = f"{_format_percent(state.agy_session.percent)}%"

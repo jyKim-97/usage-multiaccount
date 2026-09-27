@@ -25,6 +25,7 @@ from menubar import actions as menubar_actions
 from menubar import agy as menubar_agy
 from menubar import app as menubar
 from menubar import chrome as menubar_chrome
+from menubar import codex_accounts as menubar_codex_accounts
 from menubar import grok as menubar_grok
 from menubar import menu as menubar_menu
 from menubar import popover as menubar_popover
@@ -1761,6 +1762,18 @@ def test_compose_title_codex_placeholder_when_claude_hidden(
     state.hide_claude = True
 
     assert menubar_title._compose_title(delegate, state) == "--"
+
+
+def test_compose_title_shows_each_registered_codex_account_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(menubar, "_load_preferences", lambda: {})
+    delegate = menubar.AppDelegate.alloc().initWithMock_interval_(True, 60)
+    state = menubar._empty_state()
+    state.hide_claude = True
+    state.codex_accounts = menubar_codex_accounts.codex_account_states(mock=True, language="en")
+
+    assert menubar_title._compose_title(delegate, state) == "55% · 12%"
 
 
 def test_compose_title_hides_grok_when_enabled(monkeypatch: pytest.MonkeyPatch) -> None:

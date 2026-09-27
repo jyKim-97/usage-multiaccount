@@ -100,13 +100,14 @@ def merge_live_quota(
     return tuple(merged)
 
 
-def active_account_percent(accounts: tuple[CodexAccountState, ...]) -> float | None:
-    """The active account's shortest window (5-hour, else weekly, else monthly)."""
-    for account in accounts:
-        if not account.active:
-            continue
-        return next((row.percent for row in account.rows if row.percent is not None), None)
-    return None
+def account_percents(accounts: tuple[CodexAccountState, ...]) -> tuple[float, ...]:
+    """Each registered account's shortest available window, in account order."""
+    return tuple(
+        percent
+        for account in accounts
+        if (percent := next((row.percent for row in account.rows if row.percent is not None), None))
+        is not None
+    )
 
 
 def _account_state(account: AccountQuota, now: float, language: str) -> CodexAccountState:
