@@ -160,6 +160,8 @@ class PopoverState:
     history_error: HistoryLoadErrorState | None = None
     # Empty unless OpenCodex keeps a per-account quota cache.
     codex_accounts: tuple[CodexAccountState, ...] = ()
+    claude_account_name: str | None = None
+    claude_login_required: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -970,9 +972,19 @@ def _quota_row(
     *,
     window_seconds: float | None = None,
 ) -> QuotaRowState:
-    if pct is None or resets_at is None:
+    if pct is None:
         return _missing_row(title, color, language)
     pct = max(0.0, min(100.0, float(pct)))
+    if resets_at is None or resets_at <= 0:
+        return QuotaRowState(
+            title=title,
+            percent=pct,
+            percent_text=_t(language, "percent_used", value=_format_percent(pct)),
+            reset_text=_t(language, "reset_placeholder"),
+            color=_bar_color(pct, color),
+            warning=False,
+            available=True,
+        )
     time_to_reset = resets_at - now
     warning_seconds: float | None = None
     if time_to_reset < 60:

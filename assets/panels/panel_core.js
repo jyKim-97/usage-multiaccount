@@ -210,6 +210,15 @@
       renderRow(name, "weekly", rows && rows.weekly);
     }
 
+    function renderClaudeIdentity(claude) {
+      const heading = document.querySelector('[data-card="claude"] [data-i18n="claude_name"]');
+      if (!heading) return;
+      const name = claude && typeof claude.accountName === "string"
+        ? claude.accountName.trim()
+        : "";
+      heading.textContent = name ? `${t("claude_name")} · ${name}` : t("claude_name");
+    }
+
     function renderCodexStale(stale) {
       const staleEl = document.querySelector("[data-codex-stale]");
       const ageEl = document.querySelector("[data-codex-stale-age]");
@@ -436,6 +445,7 @@
       currentLanguage = I18N[state.language] ? state.language : currentLanguage;
       applyStaticText();
       applyCard("claude", state.claude);
+      renderClaudeIdentity(state.claude);
       applyCard("codex", state.codex);
       renderCodexStale(state.codex && state.codex.stale);
       renderCodexCredits(state.codex && state.codex.credits);

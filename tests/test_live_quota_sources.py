@@ -160,6 +160,105 @@ def test_expired_token_is_never_used(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     assert claude_usage_api._access_token(NOW) == "t"
 
 
+def test_expired_token_is_refreshed_and_saved(monkeypatch: pytest.MonkeyPatch) -> None:
+    credentials = {
+        "claudeAiOauth": {
+            "accessToken": "old-access",
+            "refreshToken": "old-refresh",
+            "expiresAt": (NOW - 10) * 1000,
+            "subscriptionType": "team",
+        }
+    }
+    saved: list[str] = []
+
+    class Response:
+        status = 200
+
+        def __enter__(self) -> Response:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return json.dumps(
+                {
+                    "access_token": "new-access",
+                    "refresh_token": "new-refresh",
+                    "expires_in": 3600,
+                    "refresh_token_expires_in": 86400,
+                }
+            ).encode()
+
+    def urlopen(request: object, *, timeout: float) -> Response:
+        assert timeout == claude_usage_api.REQUEST_TIMEOUT_SECONDS
+        payload = json.loads(request.data)
+        assert payload == {
+            "grant_type": "refresh_token",
+            "refresh_token": "old-refresh",
+            "client_id": claude_usage_api.OAUTH_CLIENT_ID,
+        }
+        return Response()
+
+    monkeypatch.setattr(claude_usage_api, "_read_keychain", lambda: json.dumps(credentials))
+    monkeypatch.setattr(claude_usage_api.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(
+        claude_usage_api, "_write_keychain", lambda value: saved.append(value) is None
+    )
+
+    assert claude_usage_api._access_token(NOW) == "new-access"
+    updated = json.loads(saved[0])["claudeAiOauth"]
+    assert updated["accessToken"] == "new-access"
+    assert updated["refreshToken"] == "new-refresh"
+    assert updated["expiresAt"] == int((NOW + 3600) * 1000)
+    assert updated["refreshTokenExpiresAt"] == int((NOW + 86400) * 1000)
+    assert updated["subscriptionType"] == "team"
+
+
+def test_claude_user_agent_uses_installed_cli_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(claude_usage_api.shutil, "which", lambda name: "/tmp/claude")
+    monkeypatch.setattr(
+        claude_usage_api.subprocess,
+        "run",
+        lambda *args, **kwargs: type(
+            "Completed", (), {"returncode": 0, "stdout": "2.1.283 (Claude Code)"}
+        )(),
+    )
+
+    assert claude_usage_api._claude_user_agent() == "claude-cli/2.1.283"
+
+
+def test_claude_account_name_reads_local_display_name(tmp_path: Path) -> None:
+    config = tmp_path / "claude-config"
+    config.mkdir(exist_ok=True)
+    (config / ".claude.json").write_text(
+        json.dumps({"oauthAccount": {"displayName": "Jungyoung"}}), encoding="utf-8"
+    )
+
+    assert claude_usage_api.account_name() == "Jungyoung"
+
+
+def test_invalid_refresh_marks_login_required(monkeypatch: pytest.MonkeyPatch) -> None:
+    credentials = {
+        "claudeAiOauth": {
+            "accessToken": "expired",
+            "refreshToken": "invalid",
+            "expiresAt": (NOW - 10) * 1000,
+        }
+    }
+
+    def reject(*args: object, **kwargs: object) -> None:
+        raise claude_usage_api.urllib.error.HTTPError(
+            claude_usage_api.TOKEN_URL, 400, "invalid_grant", {}, None
+        )
+
+    monkeypatch.setattr(claude_usage_api, "_read_keychain", lambda: json.dumps(credentials))
+    monkeypatch.setattr(claude_usage_api.urllib.request, "urlopen", reject)
+
+    assert claude_usage_api._access_token(NOW) is None
+    assert claude_usage_api.auth_required() is True
+
+
 def test_poll_runs_every_minute_even_when_local_hook_is_fresh(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

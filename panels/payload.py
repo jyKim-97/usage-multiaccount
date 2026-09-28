@@ -11,6 +11,7 @@ from functools import cache, lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from i18n import _t
 from usage_common.token_format import compact_tokens
 
 if TYPE_CHECKING:
@@ -130,11 +131,21 @@ def _state_payload(
                 for name, tokens, cost in rows
             ]
         )
+    claude_session = _row_payload(state.claude_session)
+    claude_weekly = _row_payload(state.claude_weekly)
+    if state.claude_login_required:
+        login_text = _t(state.language, "login_required")
+        for row in (claude_session, claude_weekly):
+            row["resetText"] = login_text
+            row["resetTextCompact"] = login_text
+            row["warning"] = False
     payload: dict[str, object] = {
         "language": state.language,
         "claude": {
-            "session": _row_payload(state.claude_session),
-            "weekly": _row_payload(state.claude_weekly),
+            "session": claude_session,
+            "weekly": claude_weekly,
+            "accountName": state.claude_account_name,
+            "authRequired": state.claude_login_required,
         },
         "codex": {
             **codex_rows,

@@ -656,18 +656,16 @@ class AppDelegate(NSObject):
     def _show_popover_from_button(self, button: Any) -> None:
         frame = self.popover.frame()
         size = (float(frame.size.width), float(frame.size.height))
-        if (top_left := panel_window_state.load_panel_window_top_left()) is not None:
-            origin: tuple[float, float] | None = (top_left[0], top_left[1] - size[1])
-        else:
-            origin = panel_window_state.load_panel_window_origin()
-        if origin is None:
-            button_window = button.window()
-            button_rect = button.convertRect_toView_(button.bounds(), None)
-            screen_rect = button_window.convertRectToScreen_(button_rect)
-            origin = (
-                float(screen_rect.origin.x) + (float(screen_rect.size.width) - size[0]) / 2.0,
-                float(screen_rect.origin.y) - size[1],
-            )
+        # Re-anchor every open to the status item. A remembered drag position
+        # becomes arbitrary after a panel-height or display-layout change and
+        # makes a menu-bar popover appear detached from the item that opened it.
+        button_window = button.window()
+        button_rect = button.convertRect_toView_(button.bounds(), None)
+        screen_rect = button_window.convertRectToScreen_(button_rect)
+        origin = (
+            float(screen_rect.origin.x) + (float(screen_rect.size.width) - size[0]) / 2.0,
+            float(screen_rect.origin.y) - size[1],
+        )
         visible_frames = [
             (
                 float(screen.visibleFrame().origin.x),

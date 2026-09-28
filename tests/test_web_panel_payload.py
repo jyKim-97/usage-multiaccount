@@ -272,3 +272,20 @@ def test_bridge_forwards_window_drag() -> None:
     )
 
     assert calls == [web_view]
+
+
+def test_claude_payload_shows_identity_and_login_required() -> None:
+    state = menubar._empty_state("en")
+    state.claude_session.reset_text = "Reset imminent"
+    state.claude_weekly.reset_text = "Reset imminent"
+    state.claude_account_name = "Jungyoung"
+    state.claude_login_required = True
+
+    claude = cast(dict[str, object], _state_payload(state)["claude"])
+    session = cast(dict[str, object], claude["session"])
+    weekly = cast(dict[str, object], claude["weekly"])
+
+    assert claude["accountName"] == "Jungyoung"
+    assert claude["authRequired"] is True
+    assert session["resetText"] == "Login required"
+    assert weekly["resetText"] == "Login required"

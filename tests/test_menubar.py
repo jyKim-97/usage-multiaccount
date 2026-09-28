@@ -291,12 +291,13 @@ def test_quota_row_returns_missing_when_percent_is_none() -> None:
     assert row.percent_text == "--"
 
 
-def test_quota_row_returns_missing_when_reset_is_none() -> None:
+def test_quota_row_keeps_percent_when_reset_is_none() -> None:
     row = menubar._quota_row("Session", 50.0, None, 1_000.0, menubar.CODEX_COLOR)
 
-    assert row.available is False
-    assert row.percent is None
-    assert row.percent_text == "--"
+    assert row.available is True
+    assert row.percent == 50.0
+    assert row.percent_text == "50% used"
+    assert row.reset_text == "Resets in --"
 
 
 def test_quota_row_formats_available_row() -> None:
@@ -399,6 +400,21 @@ def test_missing_row() -> None:
     assert row.percent is None
     assert row.percent_text == "--"
     assert row.reset_text == "重置 --"
+    assert row.warning is False
+
+
+@pytest.mark.parametrize("resets_at", [0.0])
+def test_quota_row_shows_percent_when_reset_time_is_unknown(
+    resets_at: float | None,
+) -> None:
+    row = menubar._quota_row(
+        "Session", 0.0, resets_at, 1_000.0, menubar.CLAUDE_COLOR, language="en"
+    )
+
+    assert row.available is True
+    assert row.percent == 0.0
+    assert row.percent_text == "0% used"
+    assert row.reset_text == "Resets in --"
     assert row.warning is False
 
 

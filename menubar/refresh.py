@@ -19,6 +19,7 @@ from typing import Any, Protocol
 import quota.agy_window_keeper as agy_window_keeper
 import quota.codex_window_keeper as codex_window_keeper
 import quota.window_keeper as window_keeper
+from loaders import claude_usage_api
 from loaders.history_loader import UsageEntry
 from menubar import agy as menubar_agy
 from menubar import codex_accounts as menubar_codex_accounts
@@ -265,6 +266,8 @@ def build_result(app: _RefreshApp, sources: RefreshSources) -> dict[str, Any]:
     state.codex_accounts = menubar_codex_accounts.codex_account_states(
         mock=app.mock, language=app.language
     )
+    state.claude_account_name = None if app.mock else claude_usage_api.account_name()
+    state.claude_login_required = False if app.mock else claude_usage_api.auth_required()
     return {
         "state": state,
         "codex_5h_pct": codex_5h_pct,

@@ -78,6 +78,7 @@ def _isolate_ocx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(claude_usage_api, "_poll", lambda: (None, None, None))
     monkeypatch.setattr(claude_usage_api, "_cached", None)
     monkeypatch.setattr(claude_usage_api, "_next_poll_at", 0.0)
+    monkeypatch.setattr(claude_usage_api, "_auth_required", False)
 
 
 @pytest.fixture(autouse=True)
